@@ -2,7 +2,9 @@
 # Tom Stroman, 2015-05-04
 # This is a Python-2 script to locate and assess telescope data collected
 # by the Telescope Array Experiment in Millard County, Utah.
+
 # The script is to be run from within the TA Data Server ("tadserv") cluster.
+
 # The basic operation follows 3 main steps:
 # 1. It consults a members-only wiki to populate a list of nights
 #    when specific telescope stations were collecting data.
