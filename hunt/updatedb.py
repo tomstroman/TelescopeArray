@@ -32,5 +32,5 @@ for line in open(daqdbfile).readlines():
 print 'Generating list of DAQs for incomplete parts. This may take a moment.'
 
 # syntax necessary given installed Python version is 2.6
-daqs = dict((daqID, daq.DAQ(daqID)) for daqID in sorted(daqdb) if daqdb[daqid]['nbad_cal'] != None)
+daqs = dict((daqID, daq.DAQ(daqID)) for daqID in sorted(daqdb) if daqdb[daqID]['nbad_cal'] != None)
 
