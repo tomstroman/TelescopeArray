@@ -74,4 +74,10 @@ def ymd8_desperate(ymd):
   else:
     return None
   
-  
+def getCamList(cams):
+  '''
+  Convert bitmask (cams) to list of flags, or return None argument
+  '''
+  if cams == None:
+    return None
+  return [(cams >> i) & 1 for i in range(0,12)]  
