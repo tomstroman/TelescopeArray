@@ -17,17 +17,17 @@ class DAQ():
     # Their default state is "None" until successful processing
     # provides a different number or failure indication.
     
-    self.daqID = daqID          # DAQ ID: yyyymmddpps
+    self.daqID = daqID            # DAQ ID: yyyymmddpps
     self.dbcams = None            # bitmask for cameras present
     self.dbntrig_log = None       # number of triggers in .log file
     self.dbntrig_ctd = None       # number of triggers found in CTD file
     self.dbnbad_dst = None        # number of bad DAQ DST files (post-TAMA)
     self.dbntrig_dst = None       # number of triggers in DAQ DST files
     self.dbnsec_dst = None        # seconds between first and last DAQ DST trigger
-                                # (summed over all DAQ DST files) - NOT ontime!!!
+                                  # (summed over all DAQ DST files) - NOT ontime!!!
     self.dbnbytes_dst = None      # total bytes in all DAQ DST files
     self.dbt0 = None              # time of first trigger, in days since
-                                # 2007-07-01 00:00:00 UTC
+                                  # 2007-07-01 00:00:00 UTC
     self.dbnmin_ped = None        # number of minutes in pedestal file (FDPED)
     self.dbndown = None           # number of "downward" events in FDPlane output
     self.dbnbad_cal = None        # number of events with bad calibration
@@ -66,7 +66,34 @@ class DAQ():
   
     self.status = self.exam()
   # end of __init__
-    
+  
+  def __str__(self):
+    s = self.daqID
+    if self.dbcams != None:
+      s += ' {0}'.format(self.dbcams)
+    if self.dbntrig_log != None:
+      s += ' {0}'.format(self.dbntrig_log)
+    if self.dbntrig_ctd != None:
+      s += ' {0}'.format(self.dbntrig_ctd)      
+    if self.dbnbad_dst != None:
+      s += ' {0}'.format(self.dbnbad_dst)
+    if self.dbntrig_dst != None:
+      s += ' {0}'.format(self.dbntrig_dst)
+    if self.dbnsec_dst != None:
+      s += ' {0}'.format(self.dbnsec_dst)
+    if self.dbnbytes_dst != None:
+      s += ' {0}'.format(self.dbnbytes_dst)
+    if self.dbt0 != None:
+      s += ' {0}'.format(self.dbt0)
+    if self.dbnmin_ped != None:
+      s += ' {0}'.format(self.dbnmin_ped)
+    if self.dbndown != None:
+      s += ' {0}'.format(self.dbndown)
+    if self.dbnbad_cal != None:
+      s += ' {0}'.format(self.dbnbad_cal)
+      
+    return s
+  
   def exam(self):
     '''
     Find out how much processing has been done on this part by consulting:
@@ -80,6 +107,11 @@ class DAQ():
     
     ncol = self.readDaqDB(daqdb)
       
+    dncol = 0   # number of changed columns. If this number is nonzero
+                # by the end of this method, we need to update daqdb.
+                
+    # TODO: check on individual processing steps so the database
+    #       can be updated.
     return ncol
     
   # end of exam(self)

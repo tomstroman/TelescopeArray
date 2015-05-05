@@ -1,5 +1,5 @@
 # hunt.py
-# Tom Stroman, 2015-05-04
+# Thomas Stroman, University of Utah, 2015-05-04
 # This is a Python-2 script to locate and assess telescope data collected
 # by the Telescope Array Experiment in Millard County, Utah.
 
