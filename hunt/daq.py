@@ -45,7 +45,7 @@ class DAQ():
     self.sitename = ta.sitenames[self.siteID]
 
     # a list of twelve elements, 1 if camera is present else 0
-    self.camlist = util.getCamList(self.cams)
+    self.camlist = util.getCamList(self.dbcams)
     
     # Default location on disk of timecorr and TAMA output
     self.tamapath = '{0}{1}/{2}/{3}'.format(
