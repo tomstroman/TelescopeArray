@@ -77,8 +77,8 @@ class DAQ():
     Update the self.db* variables accordingly 
     and return the number of "finished" columns.
     '''
-    if 'daqdb' in globals():
-      ncol = self.readDaqDB(daqdb)
+    
+    ncol = self.readDaqDB(daqdb)
       
     return ncol
     
@@ -94,7 +94,7 @@ class DAQ():
     if self.daqID in daqdb.keys():            
       db = daqdb[self.daqID]
       
-      ncol = sum([db[i] != None for i in db.keys()])
+      ncol = 1 + sum([db[i] != None for i in db.keys()])
       
       self.dbcams = db['cams']
       self.dbntrig_log = db['ntrig_log']

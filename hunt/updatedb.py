@@ -1,7 +1,12 @@
-daqdb = {}
+import daq
+
+
 
 # hard-coded for testing purposes.
 daqdbfile = 'logparts-20141104.txt'
+
+daqdb = {} # this is the database dict
+daq.daqdb = daqdb # add daqdb to daq global namespace
 
 
 # read the ASCII dbfile and populate the database.
@@ -21,4 +26,11 @@ for line in open(daqdbfile).readlines():
       'ndown': int(l[10]) if ll > 10 else None,
       'nbad_cal': int(l[11]) if ll > 11 else None 
       }
-  
+
+# Make a dict of DAQs       
+
+print 'Generating list of DAQs for incomplete parts. This may take a moment.'
+
+# syntax necessary given installed Python version is 2.6
+daqs = dict((daqID, daq.DAQ(daqID)) for daqID in sorted(daqdb) if daqdb[daqid]['nbad_cal'] != None)
+
