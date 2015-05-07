@@ -47,12 +47,25 @@ import daq
 
 # hard-coded for testing purposes.
 daqdbfile = 'logparts-20141104.txt'
+locdbfile = 'locations-20141104.txt'
 
 daqdb = {} # this is the database dict
-daq.daqdb = daqdb # add daqdb to daq global namespace
+locdb = {} # this is the file locations dict
+
+# add daqdb and locdb to daq global namespace
+daq.daqdb = daqdb 
+daq.locdb = locdb
 
 
-# read the ASCII dbfile and populate the database.
+# read the ASCII dbfiles and populate the databases.
+
+for line in open(locdbfile).readlines():
+  l = line.split()
+  daqID = l[0]
+  file0 = l[1]
+  daqAlias = l[1].split('-')[-3]
+  locdb[daqID] = (file0,daqAlias)
+
 for line in open(daqdbfile).readlines():
   l = line.split()
   ll = len(l)

@@ -12,6 +12,7 @@ def daqID(daq_str, site_str):
     daq += 2000000000
     
   return str(daq) + site_str
+
   
 def cams(daqline):
   '''
@@ -60,6 +61,7 @@ def ymd8(ymd):
 
   return intymd
   
+  
 def ymd8_desperate(ymd):
   '''
   This is the "desperate mode" for the ymd8 function. We will grab
@@ -74,6 +76,7 @@ def ymd8_desperate(ymd):
   else:
     return None
   
+  
 def getCamList(cams):
   '''
   Convert bitmask (cams) to list of flags, or return None argument
@@ -81,3 +84,37 @@ def getCamList(cams):
   if cams == None:
     return None
   return [(cams >> i) & 1 for i in range(0,12)]  
+  
+ 
+def jtime((year, month, day, hour, minute, second)):
+  '''
+  Given UTC timing information in a six-element tuple,
+  such as that returned by splitymdhms() below,
+  return the Julian date via the algorithm on Wikipedia: 
+  http://en.wikipedia.org/wiki/Julian_day
+  Converting_Julian_or_Gregorian_calendar_date_to_Julian_Day_Number
+  '''
+  a = (14 - month) // 12
+  y = year + 4800 - a
+  m = month + 12*a - 3
+  jdn = (153*m + 2)//5 + 365*y + y//4 - y//100 + y//400 - 32045
+  jdn += (3600*hour + 60*minute + second) / 86400. - 0.5
+  return jdn
+  
+
+def splitymdhms(ymdhms):
+  '''
+  Given a string containing *valid* date and time
+  in the order yyyy, mm, dd, HH, MM, ss(.)ssss...,
+  interpret only numeric digits. Return six numbers,
+  the first five of which are integers and the final may be float.
+  '''
+  n = ''.join([d for d in ymdhms if (d.isdigit())])
+  year = int(n[0:4])
+  month = int(n[4:6])
+  day = int(n[6:8])
+  hour = int(n[8:10])
+  minute = int(n[10:12])  
+  second = float('.'.join([n[12:14],n[14:]]))
+
+  return (year,month,day,hour,minute,second)

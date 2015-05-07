@@ -52,6 +52,8 @@ class DAQ():
         ta.tama, self.siteID, self.sitename, self.ymd )
     self.tcfile = self.tamapath + '/{0}_site{1}_timecorr.txt'.format(
         self.fymdp, self.siteID )
+
+    self.t0 = None
     
     self.daq0 = None
     
@@ -107,11 +109,16 @@ class DAQ():
     
     ncol = self.readDaqDB(daqdb)
       
-    dncol = 0   # number of changed columns. If this number is nonzero
-                # by the end of this method, we need to update daqdb.
+    dbncol = ncol
                 
     # TODO: check on individual processing steps so the database
     #       can be updated.
+    if ncol == 3:
+      ncol += self.checkTimecorr()
+    
+    if ncol == 4 and self.dbntrig_ctd != 0:
+      ncol += self.checkDST()
+      
     return ncol
     
   # end of exam(self)
@@ -145,8 +152,68 @@ class DAQ():
   
   # end of readDaqDB(self,daqdb)
   
-  #def checkTAMA(self):
-    #'''
-    #Look for the timecorr file
+  def checkTimecorr(self):
+    '''
+    Look for the timecorr file in its expected location. If it exists,
+    count the number of lines and store it to self.dbntrig_ctd.
+    Return the number of updated db elements (1 or 0).
+    '''
+    try:
+      tc = open(self.tcfile).readlines()
+    except IOError:
+      return 0
+      
+    self.dbntrig_ctd = len(tc)
+    
+    # here we also want to get the value for future use in
+    # self.dbt0, but for legacy reasons we don't update db at this stage.
+    try:
+      ymdhms = self.ymd + ''.join(tc[0].split()[2:5])
+      self.t0 = util.jtime(util.splitymdhms(ymdhms)) - ta.t0
+    except IndexError:
+      self.t0 = None
+      
+    return 1
+    
+  # end of checkTimecorr(self)
   
+  def checkDST(self):
+    '''
+    Look for evidence of DST files in their expected location.
+    The evidence sought is an "eventcounts" file produced by an independent
+    routine that inspects the DST files themselves and prints a report.
+    
+    Gather information from the eventcounts file and modify
+    self.[dbnbad_dst, dbntrig_dst, dbnsec_dst, dbnbytes_dst, dbt0],
+    and return the number of updated db elements (5 or 0).
+    '''
+    try:
+      self.daq0 = locdb[self.daqID][0]
+    except KeyError:
+      return 0
+      
+    ecf = self.tamapath + '/eventcounts-{0}.txt'.format(locdb[self.daqID][1])
+    
+    try:
+      ec = open(ecf).readlines()
+    except IOError:
+      return 0
+      
+    for line in ec:
+      l = line.split()
+      self.dbnbad_dst += int(l[4])
+      self.dbntrig_dst += int(l[1])
+      self.dbnsec_dst += float(l[2])
+      self.dbnbyte_dst += int(l[3])
+      
+    if self.t0 == None:
+      self.checkTimecorr()
+    
+    self.dbt0 = self.t0
+      
+    return 5
+    
+  # end of checkDST(self)
+    
+    
   
