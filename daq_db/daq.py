@@ -204,7 +204,7 @@ class DAQ():
       self.dbnbad_dst += int(l[4])
       self.dbntrig_dst += int(l[1])
       self.dbnsec_dst += float(l[2])
-      self.dbnbyte_dst += int(l[3])
+      self.dbnbytes_dst += int(l[3])
       
     if self.t0 == None:
       self.checkTimecorr()
