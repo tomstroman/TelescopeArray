@@ -118,7 +118,10 @@ class DAQ():
     
     if ncol == 4 and self.dbntrig_ctd != 0:
       ncol += self.checkDST()
-      
+    
+    if ncol == 9:
+      ncol += self.checkFDPED()
+    
     return ncol
     
   # end of exam(self)
@@ -215,5 +218,36 @@ class DAQ():
     
   # end of checkDST(self)
     
+  def checkFDPED(self):
+    '''
+    Look for evidence that FDPed processing stage has been run on this part.
+    The evidence sought is the stderr output from the FDPed executable.
     
+    If the stderr contains either "DELETE" or "KEEP," 
+    update self.dbnmin_ped with the resulting number of minutes (0 or >0, 
+    respectively). If neither is found, or the stderr is absent, keep None.
+    
+    Return the number of updated db elements.
+    '''
+    
+    try:
+      pederr = open(self.fdpederr).readlines()
+    except IOError:
+      return 0
+      
+    for line in pederr[::-1]: #expected line should be at end
+      if 'minutes' in line:
+        break
+    else:
+      return 0
+      
+    if 'DELETE' in line:
+      self.dbnmin_ped = 0
+    elif 'KEEP' in line:
+      self.dbnmin_ped = line.split()[5]
+    else:
+      return 0
+      
+    return 1
   
+  # end of checkFDPED(self)
