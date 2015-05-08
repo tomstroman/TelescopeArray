@@ -251,3 +251,13 @@ class DAQ():
     return 1
   
   # end of checkFDPED(self)
+  
+  def checkFDPlane(self):
+    '''
+    Look for evidence that FDPlane processing stage has been run on this part.
+    The evidence sought is the prolog output from the FDPlane executable.
+    
+    say more.
+    '''
+    
+    return 0 # temporary.
