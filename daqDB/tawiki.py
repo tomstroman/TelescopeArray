@@ -3,7 +3,16 @@ import time
 
 import ta
 import util
-import auth_ta # Private HTTP credentials for the wiki.
+try:
+   # Private HTTP credentials for the wiki.
+  from auth_ta import tawiki_username, tawiki_password
+except ImportError:
+  print 'Warning: module auth_ta is not present.'
+  tawiki_username = ''
+  tawiki_password = ''
+  
+  
+  
 
 
 
@@ -26,7 +35,7 @@ def getPage(year):
   authwiki = urllib2.HTTPPasswordMgrWithDefaultRealm()
   
   authwiki.add_password( None, wiki, 
-      auth_ta.tawiki_username, auth_ta.tawiki_password )
+      tawiki_username, tawiki_password )
       
   handler = urllib2.HTTPBasicAuthHandler(authwiki)    
   opener = urllib2.build_opener(handler)
