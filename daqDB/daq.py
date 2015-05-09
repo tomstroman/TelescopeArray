@@ -131,7 +131,7 @@ class DAQ():
     if ncol == 11:
       ncol += self.checkCalib()
     
-    if ncol > dbcol:
+    if ncol > dbncol:
       self.updated = updateDaqDB(self,daqdb)
     
     return ncol
