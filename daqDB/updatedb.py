@@ -97,8 +97,8 @@ for d in daqs.values():
   if d.updated:    
     # write a backup of the original database file
     backupdaqdb = daqdbfile.replace('.txt','-backup.txt')
-    print 'Database update required. Backing up original file to ' +
-        backupdaqdb
+    print ('Database update required. Backing up original file to ' +
+        backupdaqdb)
             
     b = open(backupdaqdb,'w')
     for line in dblines:
