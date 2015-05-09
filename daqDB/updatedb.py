@@ -106,13 +106,16 @@ for d in daqs.values():
     b.close()
     
     # now write the new file
+    print 'Writing updated ' + daqdbfile
     fdb = open(daqdbfile,'w')
     for dbk in sorted(daqdb.keys()):
       db = daqdb[dbk]
-      fdb.write('{0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11}\n'.format(
-          dbk,db['cams'],db['ntrig_log'],db['ntrig_ctd'],db['nbad_dst'],
-          db['ntrig_dst'],db['nsec_dst'],db['nbytes_dst'],db['t0'],
-          db['nmin_ped'],db['ndown'],db['nbad_cal'] ))
+      fdb.write('{0} '.format(dbk))
+      for field in daq.fields:
+        if db[field] == None:
+          break
+        fdb.write('{0} '.format(db[field]))
+      fdb.write('\n')
     fdb.close()
     break
 else:
