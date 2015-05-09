@@ -66,7 +66,8 @@ for line in open(locdbfile).readlines():
   daqAlias = l[1].split('-')[-3]
   locdb[daqID] = (file0,daqAlias)
 
-for line in open(daqdbfile).readlines():
+dblines = open(daqdbfile).readlines()
+for line in dblines:
   l = line.split()
   ll = len(l)
   daqdb[l[0]] = {
@@ -89,7 +90,30 @@ print 'Generating list of DAQs for incomplete parts. This may take a moment.'
 
 # syntax necessary given installed Python version is 2.6
 daqs = dict(
-  (daqID, daq.DAQ(daqID)) for daqID in sorted(daqdb) 
-  if daqdb[daqID]['nbad_cal'] == None )
+  (daqID, daq.DAQ(daqID)) 
+  for daqID in sorted(daqdb) if daqdb[daqID]['nbad_cal'] == None )
 
-# next step in coding: modify daqdb and write it back to disk.
+for d in daqs.values():
+  if d.updated:    
+    # write a backup of the original database file
+    backupdaqdb = daqdbfile.replace('.txt','-backup.txt')
+    print 'Database update required. Backing up original file to ' +
+        backupdaqdb
+            
+    b = open(backupdaqdb,'w')
+    for line in dblines:
+      b.write(line + '\n')
+    b.close()
+    
+    # now write the new file
+    fdb = open(daqdbfile,'w')
+    for dbk in sorted(daqdb.keys()):
+      db = daqdb[dbk]
+      fdb.write('{0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11}\n'.format(
+          dbk,db['cams'],db['ntrig_log'],db['ntrig_ctd'],db['nbad_dst'],
+          db['ntrig_dst'],db['nsec_dst'],db['nbytes_dst'],db['t0'],
+          db['nmin_ped'],db['ndown'],db['nbad_cal'] ))
+    fdb.close()
+    break
+else:
+  print 'Database is up to date.'
