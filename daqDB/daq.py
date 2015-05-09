@@ -3,6 +3,7 @@
 # this class are able to pick up where any previous processing left off.
 
 import os
+import gzip
 
 import ta
 import util
