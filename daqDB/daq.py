@@ -133,7 +133,7 @@ class DAQ():
       ncol += self.checkCalib()
     
     if ncol > dbncol:
-      self.updated = updateDaqDB(self,daqdb)
+      self.updated = self.updateDaqDB(daqdb)
     
     return ncol
     
@@ -248,6 +248,12 @@ class DAQ():
       self.errors.append(__name__ + '(): could not find ' + ecf)
       return 0
       
+    # need to initialize these to a non-None type so += will work.
+    self.dbnbad_dst = 0
+    self.dbntrig_dst = 0
+    self.dbnsec_dst = 0.
+    self.dbnbytes_dst = 0      
+    
     for line in ec:
       l = line.split()
       self.dbnbad_dst += int(l[4])
