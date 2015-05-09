@@ -77,7 +77,7 @@ def ymd8_desperate(ymd):
     return None
   
   
-def getCamList(cams):
+def get_cam_list(cams):
   '''
   Convert bitmask (cams) to list of flags, or return None argument
   '''
@@ -89,7 +89,7 @@ def getCamList(cams):
 def jtime((year, month, day, hour, minute, second)):
   '''
   Given UTC timing information in a six-element tuple,
-  such as that returned by splitymdhms() below,
+  such as that returned by split_ymdhms() below,
   return the Julian date via the algorithm on Wikipedia: 
   http://en.wikipedia.org/wiki/Julian_day
   Converting_Julian_or_Gregorian_calendar_date_to_Julian_Day_Number
@@ -102,7 +102,7 @@ def jtime((year, month, day, hour, minute, second)):
   return jdn
   
 
-def splitymdhms(ymdhms):
+def split_ymdhms(ymdhms):
   '''
   Given a string containing *valid* date and time
   in the order yyyy, mm, dd, HH, MM, ss(.)ssss...,

@@ -16,7 +16,7 @@ except ImportError:
 
 
 
-def getPage(year):
+def get_page(year):
   '''
   Download the "run logs and signups" MediaWiki page for the requested year 
   and return the HTML as a string.  
@@ -45,9 +45,9 @@ def getPage(year):
   
   
   
-def findLogDates(html,site):
+def find_log_dates(html,site):
   '''
-  Scrape the wiki HTML returned by getPage() and find instances of
+  Scrape the wiki HTML returned by get_page() and find instances of
   links to .log files that exist corresponding to the specified site.
   Extract a date from each file's name and return a list of dates in
   yyyymmdd format.

@@ -63,8 +63,8 @@ for line in open(locdbfile).readlines():
   l = line.split()
   daqID = l[0]
   file0 = l[1]
-  daqAlias = l[1].split('-')[-3]
-  locdb[daqID] = (file0,daqAlias)
+  daq_alias = l[1].split('-')[-3]
+  locdb[daqID] = (file0,daq_alias)
 
 dblines = open(daqdbfile).readlines()
 for line in dblines:

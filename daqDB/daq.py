@@ -52,7 +52,7 @@ class DAQ():
     self.sitename = ta.sitenames[self.siteID]
 
     # a list of twelve elements, 1 if camera is present else 0
-    self.camlist = util.getCamList(self.dbcams)
+    self.camlist = util.get_cam_list(self.dbcams)
     
     # Default location on disk of timecorr and TAMA output
     self.tamapath = '{0}{1}/{2}/{3}'.format(
@@ -116,33 +116,33 @@ class DAQ():
     Return the number of *new* columns.
     '''
     
-    ncol = self.readDaqDB(daqdb)
+    ncol = self.read_daq_db(daqdb)
       
     dbncol = ncol
                 
     if ncol == 3:
-      ncol += self.checkTimecorr()
+      ncol += self.check_timecorr()
     
     if ncol == 4 and self.dbntrig_ctd != 0:
-      ncol += self.checkDST()
+      ncol += self.check_dst()
     
     if ncol == 9:
-      ncol += self.checkFDPED()
+      ncol += self.check_fdped()
     
     if ncol == 10:
-      ncol += self.checkFDPLANE()
+      ncol += self.check_fdplane()
       
     if ncol == 11:
-      ncol += self.checkCalib()
+      ncol += self.check_calib()
     
     if ncol > dbncol:
-      self.updated = self.updateDaqDB(daqdb)
+      self.updated = self.update_daq_db(daqdb)
     
     return ncol
     
   # end of exam(self)
   
-  def readDaqDB(self,daqdb):
+  def read_daq_db(self,daqdb):
     '''
     Look for this part's entry in the database, and copy its values.
     The number of non-None columns will be returned.
@@ -169,9 +169,9 @@ class DAQ():
       
     return ncol
   
-  # end of readDaqDB(self,daqdb)
+  # end of read_daq_db(self,daqdb)
   
-  def updateDaqDB(self,daqdb):
+  def update_daq_db(self,daqdb):
     '''
     Look for this part's entry in the database, and update its values.
     Returns True if successful, False otherwise.
@@ -196,9 +196,9 @@ class DAQ():
 
     return True
     
-  # end of updateDaqDB(self,daqdb)
+  # end of update_daq_db(self,daqdb)
   
-  def checkTimecorr(self):
+  def check_timecorr(self):
     '''
     Look for the timecorr file in its expected location. If it exists,
     count the number of lines and store it to self.dbntrig_ctd.
@@ -216,7 +216,7 @@ class DAQ():
     # self.dbt0, but for legacy reasons we don't update db at this stage.
     try:
       ymdhms = self.ymd + ''.join(tc[0].split()[2:5])
-      self.t0 = util.jtime(util.splitymdhms(ymdhms)) - ta.t0
+      self.t0 = util.jtime(util.split_ymdhms(ymdhms)) - ta.t0
     except IndexError:
       self.errors.append(__name__ + '(): Failed to identify t0 from' + 
           self.tcfile)
@@ -224,9 +224,9 @@ class DAQ():
       
     return 1
     
-  # end of checkTimecorr(self)
+  # end of check_timecorr(self)
   
-  def checkDST(self):
+  def check_dst(self):
     '''
     Look for evidence of DST files in their expected location.
     The evidence sought is an "eventcounts" file produced by an independent
@@ -265,15 +265,15 @@ class DAQ():
       self.dbnbytes_dst += int(l[3])
       
     if self.t0 == None:
-      self.checkTimecorr()
+      self.check_timecorr()
     
     self.dbt0 = self.t0
       
     return 5
     
-  # end of checkDST(self)
+  # end of check_dst(self)
     
-  def checkFDPED(self):
+  def check_fdped(self):
     '''
     Look for evidence that FDPed processing stage has been run on this part.
     The evidence sought is the stderr output from the FDPed executable.
@@ -312,9 +312,9 @@ class DAQ():
       
     return 1
   
-  # end of checkFDPED(self)
+  # end of check_fdped(self)
   
-  def checkFDPLANE(self):
+  def check_fdplane(self):
     '''
     Look for evidence that FDPlane processing stage has been run on this part.
     The evidence sought is the prolog output from the FDPlane executable.
@@ -338,9 +338,9 @@ class DAQ():
       self.errors.append(__name__ + '(): no "valid" line in ' + self.prolog)
       return 0
       
-  # end of checkFDPLANE(self)
+  # end of check_fdplane(self)
 
-  def checkCalib(self):
+  def check_calib(self):
     '''
     Look for the presence of uncalibrated events after running FDPlane.
     Such events are indicated in the stderr output from FDPlane, and are
@@ -368,5 +368,5 @@ class DAQ():
     self.dbnbad_cal = perr.count('found') + perr.count('abort')
     return 1
     
-  #end of checkCalib(self)
+  #end of check_calib(self)
   

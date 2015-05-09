@@ -44,9 +44,9 @@ runnights = {'brm': [], 'lr': []}
 
 for year in range(2007,int(ymd[0:4])+1):
   print 'Scanning for active log files in the wiki page for {0}'.format(year)
-  html = tawiki.getPage(year)
+  html = tawiki.get_page(year)
   for site in runnights:
-    runnights[site] += tawiki.findLogDates(html,site)
+    runnights[site] += tawiki.find_log_dates(html,site)
 
 for site in runnights:
   runnights[site].sort()
@@ -77,10 +77,10 @@ for log in logs:
     daqID = util.daqID(l[0],site)
     
     # how the files are named depends on the date.
-    daqFileCode = 'DAQ-{0}-{1}'.format(
+    daq_file_code = 'DAQ-{0}-{1}'.format(
         '0'+l[0] if int(l[0]) < 10000000 else l[0],site)
         
-    daqinfo = (int(l[-2]),util.cams(line),log,daqFileCode)
+    daqinfo = (int(l[-2]),util.cams(line),log,daq_file_code)
     
     logymd = int(daqID[0:8])
     # add this daqID information to logdaqdb
@@ -136,11 +136,11 @@ for ts in glob.glob('/tadserv*'):
         '{0}/*/ctd/event-data/*.bz2'.format(month_path) ))
     
     for bz2 in tsbz2[tsID][month]:
-      daqFileCode = bz2.split('/')[-1][0:-14]
+      daq_file_code = bz2.split('/')[-1][0:-14]
       try:
-        partbz2[daqFileCode].append(bz2)
+        partbz2[daq_file_code].append(bz2)
       except KeyError:
-        partbz2[daqFileCode] = [bz2]
+        partbz2[daq_file_code] = [bz2]
     
 
 # We know what parts are listed in the logs, and what files exist on disk.
