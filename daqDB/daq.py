@@ -33,6 +33,9 @@ class DAQ():
     self.dbnbad_cal = None        # number of events with bad calibration
     
     # Everything beyond this point is all helper information.
+    
+    self.errors = []
+    
     self.ymd = daqID[0:8]
     self.part = daqID[8:10]
     self.siteID = int(daqID[10])
@@ -65,7 +68,10 @@ class DAQ():
     # Default location on disk of FDPlane output
     self.fdplanepath = '{0}/{1}/{2}'.format(ta.fdplane,self.sitename,self.ymd)
     self.prolog = self.fdplanepath + '/{0}.prolog'.format(self.fymdp)
+    self.perr = self.prolog.replace('.prolog','.pln.err')
   
+    self.updated = False
+    
     self.status = self.exam()
   # end of __init__
   
@@ -103,16 +109,13 @@ class DAQ():
     2. the expected output locations of anything not already recorded
        in the database
        
-    Update the self.db* variables accordingly 
-    and return the number of "finished" columns.
+    Return the number of *new* columns.
     '''
     
     ncol = self.readDaqDB(daqdb)
       
     dbncol = ncol
                 
-    # TODO: check on individual processing steps so the database
-    #       can be updated.
     if ncol == 3:
       ncol += self.checkTimecorr()
     
@@ -121,6 +124,15 @@ class DAQ():
     
     if ncol == 9:
       ncol += self.checkFDPED()
+    
+    if ncol == 10:
+      ncol += self.checkFDPLANE()
+      
+    if ncol == 11:
+      ncol += self.checkCalib()
+    
+    if ncol > dbcol:
+      self.updated = updateDaqDB(self,daqdb)
     
     return ncol
     
@@ -155,6 +167,33 @@ class DAQ():
   
   # end of readDaqDB(self,daqdb)
   
+  def updateDaqDB(self,daqdb):
+    '''
+    Look for this part's entry in the database, and update its values.
+    Returns True if successful, False otherwise.
+    '''
+    
+    try:
+      db = daqdb[self.daqID]
+      db['cams'] = self.dbcams
+      db['ntrig_log'] = self.dbntrig_log
+      db['ntrig_ctd'] = self.dbntrig_ctd
+      db['nbad_dst'] = self.dbnbad_dst
+      db['ntrig_dst'] = self.dbntrig_dst
+      db['nsec_dst'] = self.dbnsec_dst
+      db['nbytes_dst'] = self.dbnbytes_dst
+      db['t0'] = self.dbt0
+      db['nmin_ped'] = self.dbnmin_ped
+      db['ndown'] = self.dbndown
+      db['nbad_cal'] = self.dbnbad_cal
+    except KeyError:
+      self.errors.append(__name__ + '(): daqID no longer exists in database???')
+      return False
+
+    return True
+    
+  # end of updateDaqDB(self,daqdb)
+  
   def checkTimecorr(self):
     '''
     Look for the timecorr file in its expected location. If it exists,
@@ -164,6 +203,7 @@ class DAQ():
     try:
       tc = open(self.tcfile).readlines()
     except IOError:
+      self.errors.append(__name__ + '(): Could not read ' + self.tcfile)
       return 0
       
     self.dbntrig_ctd = len(tc)
@@ -174,6 +214,8 @@ class DAQ():
       ymdhms = self.ymd + ''.join(tc[0].split()[2:5])
       self.t0 = util.jtime(util.splitymdhms(ymdhms)) - ta.t0
     except IndexError:
+      self.errors.append(__name__ + '(): Failed to identify t0 from' + 
+          self.tcfile)
       self.t0 = None
       
     return 1
@@ -193,6 +235,8 @@ class DAQ():
     try:
       self.daq0 = locdb[self.daqID][0]
     except KeyError:
+      self.errors.append(__name__ + 
+          '(): daqID not found in location database')
       return 0
       
     ecf = self.tamapath + '/eventcounts-{0}.txt'.format(locdb[self.daqID][1])
@@ -200,6 +244,7 @@ class DAQ():
     try:
       ec = open(ecf).readlines()
     except IOError:
+      self.errors.append(__name__ + '(): could not find ' + ecf)
       return 0
       
     for line in ec:
@@ -233,31 +278,83 @@ class DAQ():
     try:
       pederr = open(self.fdpederr).readlines()
     except IOError:
+      self.errors.append(__name__ + '(): could not read ' + self.fdpederr)
       return 0
       
     for line in pederr[::-1]: #expected line should be at end
       if 'minutes' in line:
         break
     else:
+      self.errors.append(__name__ + '(): no "minutes" line in ' + 
+          self.fdpederr)
       return 0
       
     if 'DELETE' in line:
       self.dbnmin_ped = 0
     elif 'KEEP' in line:
-      self.dbnmin_ped = line.split()[5]
+      self.dbnmin_ped = int(line.split()[5])
     else:
+      self.errors.apend(__name__ + 
+          '(): "minutes" line contains neither KEEP nor DELETE')
       return 0
       
     return 1
   
   # end of checkFDPED(self)
   
-  def checkFDPlane(self):
+  def checkFDPLANE(self):
     '''
     Look for evidence that FDPlane processing stage has been run on this part.
     The evidence sought is the prolog output from the FDPlane executable.
     
-    say more.
+    If the prolog contains the word "valid" (expected on the last line), 
+    the first number following valid is the number of triggers processed,
+    and the second line is the number of "downward" events. Assign the latter
+    to self.dbndown and return 1. Otherwise return 0.
+    '''
+    try:
+      prolog = open(self.prolog).readlines()
+    except IOError:
+      self.errors.append(__name__ + '(): could not read ' + self.prolog)
+      return 0
+      
+    for line in prolog[::-1]:
+      if 'valid' in line:
+        self.dbndown = int(line.split()[-1])
+        return 1
+    else:
+      self.errors.append(__name__ + '(): no "valid" line in ' + self.prolog)
+      return 0
+      
+  # end of checkFDPLANE(self)
+
+  def checkCalib(self):
+    '''
+    Look for the presence of uncalibrated events after running FDPlane.
+    Such events are indicated in the stderr output from FDPlane, and are
+    indicated by the word "found" per event, or by the word "aborting" in
+    some cases.
+    
+    The stderr output may be compressed (gzip).
+    
+    Set self.dbnbad_cal to the number of occurrences of "found" or "abort"
+    and return 1. If the output is missing, return 0 and don't touch
+    self.dbnbad_cal.
     '''
     
-    return 0 # temporary.
+    try: 
+      perr = open(self.perr).read()
+    except IOError:
+      gzperr = self.perr + '.gz'
+      if os.access(gzperr,os.R_OK):
+        perr = gzip.open(gzperr).read()
+      else:
+        self.errors.append(__name__ + 
+            '(): could not read either unzipped or gzipped ' + self.perr)
+        return 0
+        
+    self.dbnbad_cal = perr.count('found') + perr.count('abort')
+    return 1
+    
+  #end of checkCalib(self)
+  
