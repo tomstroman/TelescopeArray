@@ -8,6 +8,9 @@ import gzip
 import ta
 import util
 
+fields = ['cams','ntrig_log','ntrig_ctd','nbad_dst','ntrig_dst',
+    'nsec_dst','nbytes_dst','t0','nmin_ped','ndown','nbad_cal']
+
 class DAQ():
   def __init__(self,daqID):
     '''
