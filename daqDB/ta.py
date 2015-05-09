@@ -10,4 +10,4 @@ tama = '/tama_'
 
 fdped = '/scratch1/fdpedv'
 
-fdplane = '/scratch/tstroman/fdplane_cal1.4_joint_20141014'
+fdplane = '/scratch/tstroman/mono/fdplane_cal1.4_joint_20141014'
