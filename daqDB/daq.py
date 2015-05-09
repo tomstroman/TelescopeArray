@@ -299,7 +299,9 @@ class DAQ():
     if 'DELETE' in line:
       self.dbnmin_ped = 0
     elif 'KEEP' in line:
-      self.dbnmin_ped = int(line.split()[5])
+      # this is necessary for the rare case of triple-digit minutes.
+      # e.g. "[109 minutes" instead of "[ 58 minutes"
+      self.dbnmin_ped = int(line.split('[')[1].split()[0])
     else:
       self.errors.apend(__name__ + 
           '(): "minutes" line contains neither KEEP nor DELETE')
