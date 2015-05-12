@@ -1,8 +1,8 @@
 import urllib2
 import time
 
-import ta
-import util
+from ta_common import ta
+from ta_common import util
 try:
    # Private HTTP credentials for the wiki.
   from auth_ta import tawiki_username, tawiki_password

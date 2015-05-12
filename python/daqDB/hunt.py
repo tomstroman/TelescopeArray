@@ -27,8 +27,8 @@ import glob
 import copy
 
 # custom modules
-import ta       # general TA information
-import util     # utility code
+from ta_common import ta       # general TA information
+from ta_common import util     # utility code
 import tawiki   # functions for scraping wiki pages
 
 

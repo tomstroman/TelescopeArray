@@ -5,8 +5,8 @@
 import os
 import gzip
 
-import ta
-import util
+from ta_common import ta
+from ta_common import util
 
 fields = ['cams','ntrig_log','ntrig_ctd','nbad_dst','ntrig_dst',
     'nsec_dst','nbytes_dst','t0','nmin_ped','ndown','nbad_cal']
