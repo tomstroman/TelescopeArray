@@ -41,13 +41,18 @@
 # perform any processing itself. However, I do intend to incorporate
 # that functionality into future revisions.
 
+import glob
+
 import daq
 
 
 
 # hard-coded for testing purposes.
-daqdbfile = 'logparts-20141104.txt'
-locdbfile = 'locations-20141104.txt'
+#daqdbfile = 'logparts-20141104.txt'
+#locdbfile = 'locations-20141104.txt'
+
+daqdbfile = sorted(glob.glob('logparts*.txt'))[-1]
+locdbfile = daqdbfile.replace('logparts','locations')
 
 daqdb = {} # this is the database dict
 locdb = {} # this is the file locations dict

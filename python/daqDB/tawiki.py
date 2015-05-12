@@ -3,13 +3,8 @@ import time
 
 from ta_common import ta
 from ta_common import util
-try:
-   # Private HTTP credentials for the wiki.
-  from auth_ta import tawiki_username, tawiki_password
-except ImportError:
-  print 'Warning: module auth_ta is not present.'
-  tawiki_username = ''
-  tawiki_password = ''
+
+from auth_ta import tawiki_username, tawiki_password
   
   
   
