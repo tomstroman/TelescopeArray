@@ -118,3 +118,18 @@ def split_ymdhms(ymdhms):
   second = float('.'.join([n[12:14],n[14:]]))
 
   return (year,month,day,hour,minute,second)
+  
+def hms2sec(hms):
+  '''
+  Given a *valid* string of the time in hhmmss.sss... format,
+  return the second into the day (0-86399.999...)
+  '''
+  
+  # machinery to parse the string already exists,
+  # if any yyyymmdd is prepended to the supplied hms.
+  ymdhms = '00000000' + hms
+  y,mo,d,h,m,s = split_ymdhms(ymdhms)
+  
+  return h*3600 + m*60 + s
+  
+  

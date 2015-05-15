@@ -12,7 +12,7 @@ fields = ['cams','ntrig_log','ntrig_ctd','nbad_dst','ntrig_dst',
     'nsec_dst','nbytes_dst','t0','nmin_ped','ndown','nbad_cal']
 
 class DAQ():
-  def __init__(self,daqID):
+  def __init__(self,daqID,verbose=False):
     '''
     Instantiate this DAQ part as fresh (unprocessed).
     Subsequent methods will populate these fields.
@@ -20,7 +20,7 @@ class DAQ():
     # These are the 12 columns of processing output.
     # Their default state is "None" until successful processing
     # provides a different number or failure indication.
-    
+
     self.daqID = daqID            # DAQ ID: yyyymmddpps
     self.dbcams = None            # bitmask for cameras present
     self.dbntrig_log = None       # number of triggers in .log file
@@ -77,6 +77,8 @@ class DAQ():
     self.updated = False
     
     self.status = self.exam()
+    if verbose:
+      print self
   # end of __init__
   
   def __str__(self):
