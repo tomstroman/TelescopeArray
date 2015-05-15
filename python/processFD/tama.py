@@ -51,10 +51,12 @@ def run_tama(daqID,locdb=None):
   if not locdb:
     locdb = util.read_loc_db(locdbfile)
   
-  daq0 = locdb.get(daqID,False)
-  if not daq0:
+  daq_tuple = locdb.get(daqID,False)
+  
+  if not daq_tuple:
     print 'No files found for part ' + daqID
   else:
+    daq0 = daq_tuple[0]
     print 'This function will eventually run tama on files related to ' + daq0
   
   return None
