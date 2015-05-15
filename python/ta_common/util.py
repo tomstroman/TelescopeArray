@@ -132,4 +132,14 @@ def hms2sec(hms):
   
   return h*3600 + m*60 + s
   
-  
+def read_loc_db(locdbfile):
+  locdb = {}
+  with open(locdbfile) as floc:
+    for line in floc.readlines():
+      l = line.split()
+      daqID = l[0]
+      file0 = l[1]
+      daq_alias = l[1].split('-')[-3]
+      locdb[daqID] = (file0,daq_alias)  
+
+  return locdb

@@ -5,6 +5,7 @@ import subprocess as sp
 from ta_common import tabin
 from ta_common import util
 
+locdbfile = '../daqDB/locations-20141104.txt'
 
 def validate_raw(dst, expected):
   '''
@@ -13,7 +14,7 @@ def validate_raw(dst, expected):
   
   Run dstdump on dst, finding lines with times.
   Return the number of such lines, the difference between first and last
-  times, the size of the file, 
+  times, the size of the file, and whether the file had any problems.
   '''
 
   try:
@@ -46,4 +47,14 @@ def validate_raw(dst, expected):
   
   return (len(times),dtimes,size,bad)
   
+def run_tama(daqID,locdb=None):
+  if not locdb:
+    locdb = util.read_loc_db(locdbfile)
   
+  daq0 = locdb.get(daqID,False)
+  if not daq0:
+    print 'No files found for part ' + daqID
+  else:
+    print 'This function will eventually run tama on files related to ' + daq0
+  
+  return None

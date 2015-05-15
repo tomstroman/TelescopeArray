@@ -44,7 +44,7 @@
 import glob
 
 import daq
-
+from ta_common import util
 
 
 # hard-coded for testing purposes.
@@ -55,7 +55,7 @@ daqdbfile = sorted(glob.glob('logparts*.txt'))[-1]
 locdbfile = daqdbfile.replace('logparts','locations')
 
 daqdb = {} # this is the database dict
-locdb = {} # this is the file locations dict
+locdb = util.read_loc_db(locdbfile) # this is the file locations dict
 
 # add daqdb and locdb to daq global namespace
 daq.daqdb = daqdb 
@@ -64,12 +64,6 @@ daq.locdb = locdb
 
 # read the ASCII dbfiles and populate the databases.
 
-for line in open(locdbfile).readlines():
-  l = line.split()
-  daqID = l[0]
-  file0 = l[1]
-  daq_alias = l[1].split('-')[-3]
-  locdb[daqID] = (file0,daq_alias)
 
 dblines = open(daqdbfile).readlines()
 for line in dblines:
