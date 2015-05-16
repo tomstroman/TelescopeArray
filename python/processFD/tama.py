@@ -143,8 +143,29 @@ def get_timecorr(daq_tuple,tcfile):
   for a given part. Return True if creation was successful, else False.
   '''
   
-  # TODO: make this function do something
-  return False
+  outdir = os.path.dirname(tcfile)
+  
+  daqID = ''.join([c for c in os.path.basename(tcfile) if c.isdigit()])
+  
+  site = daqID[10]
+  
+  
+  # goal: extract 
+  # /tadserv1/tafd/y2007m11d01/station0/ctd/event-data/DAQ-0110104
+  # from 
+  # /tadserv1/tafd/y2007m11d01/station0/ctd/event-data/DAQ-0110104-0-0000000.d.bz2
+  
+  head = '-'.join(daq_tuple[0].split('-')[:-2])
+  
+  
+  cmd = [tabin.getTimeTable,site,outdir,head]
+  sp.call(cmd)
+  
+  if os.path.exists(tcfile):
+    return True
+  else: 
+    print 'Failed to create ' + tcfile
+    return False  
   
   # end of get_timecorr
   
