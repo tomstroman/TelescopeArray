@@ -34,7 +34,8 @@ def assess_tama(daqID,rebuild=0,locdb=None,daqdb=None):
   if not daq['cams']: # we know nothing about this part
     return None
         
-  if not daq['nbad_dst'] and daq['ntrig_dst'] == daq['ntrig_log']:
+  if ( not rebuild and not daq['nbad_dst'] 
+      and daq['ntrig_dst'] == daq['ntrig_log'] ):
     return False # no bad parts and no problems
   
   # we got here, so there may be work to do. Now we figure out where
@@ -92,7 +93,7 @@ def assess_tama(daqID,rebuild=0,locdb=None,daqdb=None):
   cams = util.get_cam_list(daq['cams'])
   for segment in segments:
     ctd = daq_tuple[0][:-13] + segment + '.d.bz2'
-    files[segment] = ctd
+    files[segment] = [ctd]
     files[segment] += [ ctd.replace('ctd','camera{0:02d}'.format(
         i)).replace(segment,'{0:1x}-{1}'.format(i,segment)) 
         for i in range(0,12) if cams[i] ]
