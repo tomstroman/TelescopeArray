@@ -102,7 +102,7 @@ def tama_complete(daqID,tcfile,ecfile):
   
   # count lines in the timecorr file or return False
   try:
-    with open(final_timecorr) as tcf:
+    with open(tcfile) as tcf:
       ntrig_ctd = len(tcf.readlines())
   except IOError:
     return False
