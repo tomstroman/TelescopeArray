@@ -86,6 +86,18 @@ def assess_tama(daqID,rebuild=0,locdb=None,daqdb=None):
   if not tc_exists: # it still doesn't exist, so we surrender
     return None
   
+  # timecorr exists. Let's identify the expected files for each segment.
+  segments = ['{0:07d}'.format(i) for i in range(0,daq['ntrig_log'],256)]
+  files = {}
+  cams = util.get_cam_list(daq['cams'])
+  for segment in segments:
+    ctd = daq_tuple[0][:-13] + segment + '.d.bz2'
+    files[segment] = ctd
+    files[segment] += [ ctd.replace('ctd','camera{0:02d}'.format(
+        i)).replace(segment,'{0:1x}-{1}'.format(i,segment)) 
+        for i in range(0,12) if cams[i] ]
+  
+  print files
   return True
 
   # end of assess_tama
