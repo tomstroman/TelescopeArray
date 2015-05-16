@@ -111,7 +111,7 @@ def tama_complete(daqID,tcfile,ecfile):
   ntrig_dst = 0
   bad_segments = []
   try:
-    with open(final_ecounts) as ecf:
+    with open(ecfile) as ecf:
       ec = ecf.readlines()
       for line in ec:
         l = line.split()
