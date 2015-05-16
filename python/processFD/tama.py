@@ -32,8 +32,11 @@ def assess_tama(daqID,rebuild=0,locdb=None):
   if not daq_tuple:
     print 'No files found for part ' + daqID
     return None
-    
-  if tama_complete(daqID) and not rebuild:
+  
+  tcfile = util.get_timecorr(daqID)
+  ecfile = util.get_ecf(daq_tuple[1])
+  
+  if tama_complete(daqID,tcfile,ecfile) and not rebuild:
     return False    
     
   daq0 = daq_tuple[0]
@@ -54,7 +57,7 @@ def assess_tama(daqID,rebuild=0,locdb=None):
   
   return None
 
-def tama_complete(daqID):
+def tama_complete(daqID,tcfile,ecfile):
   '''
   Look in the permanent location for TAMA output from part specified
   by daqID. 
@@ -68,15 +71,14 @@ def tama_complete(daqID):
   
   final_tama = '{0}{1}/{2}/{3}'.format(ta.tama,site,ta.sitenames[site],ymd)
   
-  timecorr = util.timecorr(daqID)
-  
   # Quit now if permanent output location doesn't exist
   if not os.path.exists(final_tama):
     return False
   
-  final_timecorr = final_tama + '/' + timecorr
-  final_ecounts = final_tama + '/' + util.get_ecf(daq_tuple) 
+  final_timecorr = final_tama + '/' + tcfile
+  final_ecounts = final_tama + '/' + ecfile 
   
+    
   
   # count lines in the timecorr file or return False
   try:
