@@ -11,3 +11,5 @@ tama = '/tama_'
 fdped = '/scratch1/fdpedv'
 
 fdplane = '/scratch/tstroman/mono/fdplane_cal1.4_joint_20141014'
+
+localtama = '/scratch1/tama'
