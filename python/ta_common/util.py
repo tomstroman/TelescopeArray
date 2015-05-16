@@ -148,7 +148,7 @@ def read_loc_db(locdbfile):
 
   return locdb
   
-def read_daq_db(dacdbfile):
+def read_daq_db(daqdbfile):
   '''
   Read the DAQ status ASCII database into
   the daqdb dict, which is then returned.
