@@ -34,7 +34,7 @@ def assess_tama(daqID,rebuild=0,locdb=None):
     return None
   
   tcfile = util.timecorr(daqID)
-  ecfile = util.get_ecf(daq_tuple[1])
+  ecfile = util.get_ecf(daq_tuple)
   
   if tama_complete(daqID,tcfile,ecfile) and not rebuild:
     return False    
