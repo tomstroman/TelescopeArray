@@ -133,6 +133,10 @@ def hms2sec(hms):
   return h*3600 + m*60 + s
   
 def read_loc_db(locdbfile):
+  '''
+  Read the DAQ-file locations ASCII database into
+  the locdb dict, which is then returned.
+  '''
   locdb = {}
   with open(locdbfile) as floc:
     for line in floc.readlines():
@@ -143,3 +147,18 @@ def read_loc_db(locdbfile):
       locdb[daqID] = (file0,daq_alias)  
 
   return locdb
+  
+def get_ecf(loc_tuple):
+  '''
+  Return the basename of the eventcounts file for a single part,
+  given the corresponding locdb entry (a two-element tuple).
+  '''
+  return 'eventcounts-{0}.txt'.format(loc_tuple[1])
+  
+def timecorr(daqID):
+  '''
+  Return the basename of the timecorr file for a single part,
+  given the 11-digit daqID.
+  '''
+  return 'y{0}m{1}d{2}p{3}_site{4}_timecorr.txt'.format(
+      daqID[0:4],daqID[4:6],daqID[6:8],daqID[8:10],daqID[10] )

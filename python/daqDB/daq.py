@@ -245,7 +245,7 @@ class DAQ():
           '(): daqID not found in location database')
       return 0
       
-    ecf = self.tamapath + '/eventcounts-{0}.txt'.format(locdb[self.daqID][1])
+    ecf = self.tamapath + '/' + util.get_ecf(locdb[self.daqID])
     
     try:
       ec = open(ecf).readlines()
