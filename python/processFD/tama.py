@@ -33,7 +33,7 @@ def assess_tama(daqID,rebuild=0,locdb=None):
     print 'No files found for part ' + daqID
     return None
   
-  tcfile = util.get_timecorr(daqID)
+  tcfile = util.timecorr(daqID)
   ecfile = util.get_ecf(daq_tuple[1])
   
   if tama_complete(daqID,tcfile,ecfile) and not rebuild:
