@@ -89,24 +89,22 @@ def assess_tama(daqID,rebuild=0,locdb=None,daqdb=None):
   
   # timecorr exists. Let's identify the expected files 
   # for each 256-trigger segment. Also, name of DST output.
-  segments = ['{0:07d}'.format(i) for i in range(0,daq['ntrig_log'],256)]
-  files = {}
-  dst = {}
-  tama_cmd = {}
-  cams = util.get_cam_list(daq['cams'])
-  for segment in segments:
-    dst[segment] = tama_outdir + '/DAQ-{0}-{1}.dst.gz'.format(
-        daq_tuple[1],segment)
-    ctd = daq_tuple[0][:-13] + segment + '.d.bz2'
-    files[segment] = [ctd]
-    files[segment] += [ ctd.replace('ctd','camera{0:02d}'.format(
-        i)).replace(segment,'{0:1x}-{1}'.format(i,segment)) 
-        for i in range(0,12) if cams[i] ]
-    tama_cmd[segment] = [tabin.tama,
   
+  infiles,dst = tama_data(daq,daq_tuple,site,tama_outdir)
   
-  
-  return True
+  # generate a dict containing TAMA commands necessary to build this
+  # entire part. Do not run it here, but return the dict.
+        
+  tama_cmd = {}        
+  for segment in infiles.keys():
+    tama_cmd[segment] = ['mosrun -q -b -l -m320 -e']
+    tama_cmd[segment] += [tabin.tama,'-t','-o',dst[segment]]
+    tama_cmd[segment] += infiles[segment]
+    
+  # TODO: check for existing output files if rebuild=2, and
+  # remove the corresponding commands from tama_cmd
+    
+  return tama_cmd
 
   # end of assess_tama
   
@@ -231,3 +229,37 @@ def validate_raw(dst, expected):
   return (len(times),dtimes,size,bad)
   
   #end of validate_raw
+
+  
+def tama_data(daq,daq_tuple,site,tama_outdir):
+  '''
+  Identify expected input and output data files for TAMA. Input files
+  are predicted based on the contents of DAQ and location databases,
+  and output DSTs are based on the location specified in ta_common.ta.
+  Return infiles/outfiles dicts.
+  '''
+  files = {}
+  dst = {}
+  
+  # a part is typically thousands of triggers, but stored in segments
+  # up to 256 triggers in length.
+  segments = ['{0:07d}'.format(i) for i in range(0,daq['ntrig_log'],256)]
+  
+  # which cameras were involved in the part, according to the log?
+  cams = util.get_cam_list(daq['cams'])
+  
+  for segment in segments:
+    # the output file for this segment
+    dst[segment] = tama_outdir + '/DAQ-{0}-{1}-{2}.dst.gz'.format(
+        daq_tuple[1],site,segment)
+    
+    # the input files: CTD, plus one for each camera
+    ctd = daq_tuple[0][:-13] + segment + '.d.bz2'
+    files[segment] = [ctd]
+    files[segment] += [ ctd.replace('ctd','camera{0:02d}'.format(
+        i)).replace(segment,'{0:1x}-{1}'.format(i,segment)) 
+        for i in range(0,12) if cams[i] ]
+  
+  
+  return files,dst
+  # end of tama_data
