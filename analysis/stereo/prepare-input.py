@@ -35,7 +35,12 @@ etuples = sorted(glob.glob('dumpst2.*.tuple.txt'))
 # only (calib) may contain periods.
 
 # source contains exactly one of these words, but possibly extra characters.
-species = ['nature','mc-proton','mc-iron','mc-nitro','mc-helium']
+# values are the abbreviation used in some existing ROOT programs.
+species = {'nature': 'f',
+           'mc-proton': 'g',
+           'mc-iron': 'h',
+           'mc-nitro': 'n',
+           'mc-helium': 'he'}
 
 # Contents of files and corresponding filename hints
 names = {'Tuple': 'tuple', 'Prof': 'prof', 'PRA': 'prof.PRA'}
@@ -88,10 +93,11 @@ for etuple in etuples:
 # loop over all items in groups, combining files as needed,
 # and preparing the list of files to process in ROOT.
 
+to_process = {}
+
 for tag,files in groups.items():
-  l = len(files)
-  if l == 1:    # there are no files to combine
-    continue
+
+  to_process[tag] = []
   
   fields = tag.split('__')
   calib,model,recon = [fields[i] for i in [0,1,3]]
@@ -109,12 +115,22 @@ for tag,files in groups.items():
     # guarantees that we'll attempt to combine all of them.
 
     for contents,name in names.items():
-      if os.path.exists(f[0].replace('tuple',name)):
-        present[contents] = True
+      fname = f[0].replace('tuple',name)
+      if os.path.exists(fname):
+        present[contents] = fname
     
-
+  l = len(files)
+  if l == 1:    # No combination is necessary
+    to_process[tag] += [present[i] for i in present if present[i]]
+    continue
+    
+    
   # We will separately combine tuple, prof, and PRA files.
-  # Behavior for each type is slightly different.
+  # Behavior for each type is slightly different. But rather than
+  # reformatting PRA files here, now we just combine them and save
+  # that step for later.
+  
+  
   
   for contents,name in names.items():
     
@@ -124,6 +140,8 @@ for tag,files in groups.items():
     outfile = '.'.join([calib,model,recon,contents,'_'.join(sources)])
     outfile += '.combined{0}.txt'.format(name)
     print('Now writing ' + outfile)
+    
+    present[contents] = outfile
     
     with open(outfile,'w') as outf:
       # tuple and PRA files will use this:
@@ -147,23 +165,43 @@ for tag,files in groups.items():
               skip_head = True
             for line in inl[1:]:
               outbuf.append(line)
-            
-          elif contents == 'Prof':
+          
+          else: # prof or PRA files
             # easiest case: just concatenate
             outbuf += inl
-            
-          else: # contents == 'PRA'
-            # most complicated: combine four lines of input into
-            # one line of output.
-            if not skip_head:
-              outbuf = [pra_head]
-              skip_head = True
 
-            outbuf += format_pra(inl)
 
       print('Writing {0} lines.'.format(len(outbuf)))
       outf.write('\n'.join(outbuf) + '\n')
+      
+  to_process[tag] += [present[i] for i in present if present[i]]
 
+# now we know which files contain the information we want. Let's 
+# group them according to the intermediate ROOT output (prior to
+# final combination). We will group multiple sources (species).
 
+root_batches = {}
+for tag,files in to_process.items():
+  tags = tag.split('__')
+  
+  # form tag from calib, model, recon
+  cmr = '__'.join([tags[i] for i in [0,1,3]])
+  
+  for infile in files:
+    sp = [species[i] for i in species if i in infile][0]
+  
+    try:
+      root_batches[cmr][sp] = infile
+    except KeyError:
+      root_batches[cmr] = {sp: infile}
+      
   
   
+
+#'TTree *{0} = new TTree();\n'
+#'{0}->ReadFile("{1}");\n'
+#'TFile e("{0}");\n'
+
+
+
+
