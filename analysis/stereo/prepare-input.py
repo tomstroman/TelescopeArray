@@ -3,7 +3,11 @@
 # This script reads one or more ASCII files produced by stereo-data processing
 # and produces "ROOT Trees" for use with ROOT analysis programs.
 
-# USAGE: Run this script in the directory where the ASCII files are located.
+# USAGE: 
+# Run this script once in the directory where the ASCII files are located.
+# It's not "smart" - it won't look for existing copies of the output it 
+# will attempt to create. Minimize its running time by organizing related files
+# into directories separate from other files.
 
 # We don't produce the trees directly, but produce ROOT scripts tailored to the
 # specific filenames and inferred contents. We then run the scripts and attempt
@@ -295,9 +299,13 @@ for tag in root_batches:
     os.system('root -l -b -q ' + root_script)
     root_batches[tag]['out'].append(temp_treefile)
     
-    
+  final_out =  '.'.join([calib,model,recon,final_root_name,
+      '_'.join(insert_species),'root'])
+  cmd = 'hadd ' + final_out
+  cmd += (len(root_batches[tag]['out'])*' {}').format(
+      *root_batches[tag]['out'] )
 
-
+  os.system(cmd)
 
 
 
