@@ -23,7 +23,8 @@
 # and applied to the data-profile files on a separate timetable, and as such,
 # these files may not be present, especially for recently processed data.
 
-# Some files may need to be combined or otherwise manipulated.
+# Some files may need to be combined or otherwise manipulated. I used to do
+# this all by hand on the command line.
 
 # Conventions established by convenience early in the development of analysis
 # have a nasty habit of persisting in perpetuity. Some examples of that may
@@ -218,7 +219,7 @@ for tag,files in to_process.items():
 
 # go through the main tags, processing in turn the Tuple, Prof, and PRA
 # files for all species combined. Make a note of which ones, so they can be
-# combined into a single file later.
+# combined into a single file later (the "hadd" command supplied with ROOT).
 
 ordered_species = ['f','g','h','n','he']
 prof_names = {'f': 'nature',
