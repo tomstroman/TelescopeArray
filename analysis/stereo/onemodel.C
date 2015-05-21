@@ -150,5 +150,13 @@
   TChain *n = m[3][TUPLE];
   TChain *he = m[4][TUPLE];
 
+  // **************************************************
+  // * the onemodel.C core functionality is FINISHED. * 
+  // * experimentation BELOW this line is permitted.  *
+  // **************************************************
+  
+  gROOT->LoadMacro("macro/weather.C+");
+  gROOT->LoadMacro("macro/ghwr.C+");
+  
   
 }
