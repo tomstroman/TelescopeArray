@@ -12,6 +12,20 @@
 {
   // hard-code the input filename here.
   char infile[1024] = "/data/stereo/data/20150520/gdas_j1.4.qgsjetii-03.width1-mdghd.TupleProf.nature_mc-proton0_mc-iron0.root";
+
+  // USE_PRA tells the code how to incorporate or ignore the
+  // third-party pattern-recognition analysis cuts, if available.
+  // USE_PRA = 0: do not use
+  //           1: require for all events
+  //           2: require for single-profile events
+  
+  int USE_PRA = 0;  
+  
+  // *****************************************************
+  // * Everything between here and the next comment box  *
+  // * is the core functionality and should be stable.   *
+  // *****************************************************
+  
   
   // load the infile and print its contents to the screen.
   TFile *model = new TFile(infile);
@@ -35,13 +49,7 @@
 #define PRA             4
     
     
-  // USE_PRA tells the code how to incorporate or ignore the
-  // third-party pattern-recognition analysis cuts, if available.
-  // USE_PRA = 0: do not use
-  //           1: require for all events
-  //           2: require for single-profile events
-  
-  int USE_PRA = 0;
+
   
   // now we can load the standard set of quality cuts.
 #include "cuts.h"  
@@ -150,13 +158,22 @@
   TChain *n = m[3][TUPLE];
   TChain *he = m[4][TUPLE];
 
+  // finally, let's set the default location for any output to be
+  // "output" in the directory where the input file is located.
+  // First, add the script location to the Macro Path:
+  gROOT->SetMacroPath(Form("%s%s",gROOT->GetMacroPath(),gSystem->pwd()));
+  // now change:
+  char output[1024];
+  sprintf(output,"%s/output",gSystem->DirName(infile));
+  int mkdirfailed = gSystem->MakeDirectory(output);
+  int cdsuccess = gSystem->cd(output);
+  if (cdsuccess)
+    printf("\n\n *** output location set to %s ***\n",output);
+  
+  
   // **************************************************
   // * the onemodel.C core functionality is FINISHED. * 
   // * experimentation BELOW this line is permitted.  *
   // **************************************************
-  
-  gROOT->LoadMacro("macro/weather.C+");
-  gROOT->LoadMacro("macro/ghwr.C+");
-  
   
 }
