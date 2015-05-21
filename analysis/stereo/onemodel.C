@@ -7,19 +7,27 @@
  * For convenience with variable scope, this is not a named macro.
  * The downside is that the filename to be read must be hard-coded
  * into the macro at execution time, rather than passed as an argument.
+ * Exception to this: if this macro is embedded into a parent macro
+ * via 
+ * gROOT->ProcessLine(".x onemodel.C"); 
+ * then the parent macro can define infile and/or USE_PRA instead.
  */
 
 {
-  // hard-code the input filename here.
-  char infile[1024] = "/data/stereo/data/20150520/gdas_j1.4.qgsjetii-03.width1-mdghd.TupleProf.nature_mc-proton0_mc-iron0.root";
+  if (gROOT->GetGlobal("infile") == NULL) {
+    // hard-code the input filename here.  
+    char infile[1024] = "/data/stereo/data/20150520/gdas_j1.4.qgsjetii-03.width1-mdghd.TupleProf.nature_mc-proton0_mc-iron0.root";
+  }
+  
 
   // USE_PRA tells the code how to incorporate or ignore the
   // third-party pattern-recognition analysis cuts, if available.
   // USE_PRA = 0: do not use
   //           1: require for all events
   //           2: require for single-profile events
-  
-  int USE_PRA = 0;  
+  if (gROOT->GetGlobal("USE_PRA") == NULL) {
+    int USE_PRA = 0;  
+  }
   
   // *****************************************************
   // * Everything between here and the next comment box  *
@@ -174,6 +182,8 @@
   // **************************************************
   // * the onemodel.C core functionality is FINISHED. * 
   // * experimentation BELOW this line is permitted.  *
+  // * However, instead consider embedding this code  *
+  // * in another macro - see sample-onemodel.C       *
   // **************************************************
   
 }
