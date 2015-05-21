@@ -114,7 +114,7 @@ TTree *buildTreeRecon(TTree *t)/*, TCut *cut, TCut pcut[3], int USE_PRA)*/ {
     if (gprof[2][i] == 1) {
       xmaxa[ngprof] = t->GetLeaf("mxmax")->GetValue();
       xmax += xmaxa[ngprof];
-      epria[ngprof] = t->GetLeaf("mepri_rc")->GetValue();
+      epria[ngprof] = t->GetLeaf("mepri")->GetValue();
       epri += epria[ngprof];
       ecala[ngprof] = t->GetLeaf("mecal")->GetValue();
       ecal += ecala[ngprof];
