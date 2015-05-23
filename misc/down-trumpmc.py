@@ -28,6 +28,7 @@ with open(outfile,'w') as out:
   out.write('epri:xcore:ycore:zcore:ux:uy:uz:rpkm:psi:')
   out.write('zenrad:azmrad:ghx0:ghlambda:ghxmax:ghnmax\n')
   for ymd in sorted(glob.glob(mcpath + '/lr/20*')):
+    print ymd
     buf = ''
     for down in sorted(glob.glob(ymd + '/*.down.dst.gz')):
       cmd = tabin.dstdump + ' -trumpmc ' + down
@@ -54,11 +55,11 @@ with open(outfile,'w') as out:
       zenith = [math.acos(-uv[2]) for uv in fsv]
       azimuth = [math.atan2(-uv[1],-uv[0]) for uv in fsv]
       
-      epri = re.findall('(?<=Energy:)[\s\d\.]*',dump)
+      epri = re.findall('(?<=Energy:)[\s\d\.e]*',dump)
       ghxmax = re.findall('(?<=Xmax)[\s\d\.]*',dump)
       ghx0 = re.findall('(?<=Xo)[\s\d\.]*',dump)
       ghlambda = re.findall('(?<=Lambda).*',dump)
-      ghnmax = re.findall('(?<=Nmax)[\s\d\.]*',dump)
+      ghnmax = re.findall('(?<=Nmax)[\s\d\.e]*',dump)
     
       for line in zip(epri,core,sv,rp,psi,zenith,
           azimuth,ghx0,ghlambda,ghxmax,ghnmax):
