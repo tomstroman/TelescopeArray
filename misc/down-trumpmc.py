@@ -55,11 +55,11 @@ with open(outfile,'w') as out:
       zenith = [math.acos(-uv[2]) for uv in fsv]
       azimuth = [math.atan2(-uv[1],-uv[0]) for uv in fsv]
       
-      epri = re.findall('(?<=Energy:)[\s\d\.e-\+]*',dump)
-      ghxmax = re.findall('(?<=Xmax)[\s\d\.e-\+]*',dump)
-      ghx0 = re.findall('(?<=Xo)[\s\d\.e-\+]*',dump)
+      epri = re.findall('(?<=Energy:)[\s\d\.e+-]*',dump)
+      ghxmax = re.findall('(?<=Xmax)[\s\d\.e+-]*',dump)
+      ghx0 = re.findall('(?<=Xo)[\s\d\.e+-]*',dump)
       ghlambda = re.findall('(?<=Lambda).*',dump)
-      ghnmax = re.findall('(?<=Nmax)[\s\d\.e-\+]*',dump)
+      ghnmax = re.findall('(?<=Nmax)[\s\d\.e+-]*',dump)
     
       for line in zip(epri,core,sv,rp,psi,zenith,
           azimuth,ghx0,ghlambda,ghxmax,ghnmax):
