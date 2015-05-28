@@ -18,6 +18,7 @@ import subprocess
 import re
 import math as m
 
+from ta_common import ta
 from ta_common import tabin
 
 if len(sys.argv) == 1:
@@ -48,6 +49,7 @@ except OSError: # NOTE: in python3, possibly a FileNotFoundError
 nconf = len(glob.glob('*.conf'))
   
 outfile = 'trump.out'
+
 # This may take hours.
 # (this approach causes outfile to be written so we can check progress)
 os.system(trump + ' *conf &> ' + outfile)
@@ -58,7 +60,7 @@ os.system(trump + ' *conf &> ' + outfile)
 os.system('mv */*.rts .')
 
 for rts in glob.glob('*.rts'): # should only be one
-  cmd = [tabin.rtsparser,' -Etslpcgu ',rts]  
+  cmd = [tabin.rtsparser,'-Etslpcgu',rts]  
   out = subprocess.Popen(cmd,stdout=subprocess.PIPE).stdout
   
   # manipulate some lines and skip repeated events
@@ -87,7 +89,7 @@ for rts in glob.glob('*.rts'): # should only be one
   with open(rts_txt,'w') as txt:
     txt.write(buf)
     
-  cmd = 'root -l -q "$TRUMP/bin/rts2root.C(\"' + rts_txt + '\")"'
+  cmd = 'root -l -q "$TRUMP/bin/rts2root.C(\\"' + rts_txt + '\\")"'
   os.system(cmd)
   os.system('rm ' + rts_txt)
   
@@ -106,9 +108,12 @@ for sa,siteid in {'br': 0, 'lr': 1}.items():
   if nconf == 1:
     dst = glob.glob('*d??.dst.gz')[0]
     cmd = tabin.dstdump + '-{0}raw {1}'.format(sa,dst)
+    # run dstdump to extract part numbers of stored events
     out = subprocess.Popen(cmd,stdout=subprocess.PIPE).stdout.read()
     parts = re.findall('(?<=part )\d*',out)
     
+    # find first occurrence of a part and number of occurrences;
+    # these are arguments to dstsplit
     for s in set(parts):
       first = parts.index(s)
       count = parts.count(s)
