@@ -21,21 +21,21 @@ if len(sys.argv) != 3:
   
 try:
   with open(sys.argv[1]) as config_template:
-    conf = config_template.read()
+    tconf = config_template.read()
 except IOError:
   print('Error: configuration template',conft,'does not exist.')
   sys.exit()
   
 ymd = sys.argv[2]
 
-# From ymd and conf, we generate the seed for the random-number generator.
+# From ymd and tconf, we generate the seed for the random-number generator.
 # The seed is generated from information on three lines in the template
 # that begin with "tstroman-salt-" and also the ymd.
 # These four values are joined with spaces and followed by a newline
 # before md5-hashing to match the behavior of a Bash script.
 # We only use the first eight hex digits of the md5 sum.
 
-csalt = re.findall('(?<=tstroman-salt-).*',conf)
+csalt = re.findall('(?<=tstroman-salt-).*',tconf)
 salt = ' '.join([s.split()[1] for s in csalt])
 salt += ' ' + ymd + '\n'
 seed = str(int(md5(salt).hexdigest()[0:8],16))
@@ -71,7 +71,7 @@ for site,siteid in {'br': 0, 'lr': 1}.items():
   replace_geo = site
   replace_ontime = ped
   
-  conf = conf.replace('REPLACE_DSTFILE',replace_dstfile)
+  conf = tconf.replace('REPLACE_DSTFILE',replace_dstfile)
   conf = conf.replace('REPLACE_SITE',replace_site)
   conf = conf.replace('REPLACE_GEO',replace_geo)
   conf = conf.replace('REPLACE_ONTIME',replace_ontime)
