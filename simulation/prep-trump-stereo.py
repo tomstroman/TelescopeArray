@@ -52,7 +52,7 @@ for site,siteid in {'br': 0, 'lr': 1}.items():
   ped += '/' + fymd + '.ped.dst.gz'
   
   if not os.path.exists(ped):
-    print "Didn't find",ped
+    #print "Didn't find",ped
     continue
 
   # create the output location

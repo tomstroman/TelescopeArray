@@ -107,7 +107,7 @@ for sa,siteid in {'br': 0, 'lr': 1}.items():
   # together into one DST file. We need to split the file up by part.
   if nconf == 1:
     dst = glob.glob('*d??.dst.gz')[0]
-    cmd = tabin.dstdump + '-{0}raw {1}'.format(sa,dst)
+    cmd = [tabin.dstdump,'-{0}raw'.format(sa),dst]
     # run dstdump to extract part numbers of stored events
     out = subprocess.Popen(cmd,stdout=subprocess.PIPE).stdout.read()
     parts = re.findall('(?<=part )\d*',out)
