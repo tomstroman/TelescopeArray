@@ -5,6 +5,8 @@
  * is the average energy deposit over the entire age of a cosmic-ray air
  * shower, given the energy deposit per particle as a function of age
  * and assuming the number of particles has a Gaussian-in-age evolution.
+ * An optional sixth argument to utafd_shower_average will adjust the 
+ * value for a "cutoff energy" other than the default of 0.05 MeV.
  */
 #include "TROOT.h"
 #include "TMath.h"
