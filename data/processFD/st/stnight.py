@@ -50,7 +50,7 @@ def valid(night_path):
 
   if not os.path.exists(srcdir):
     raise InvalidPath(srcdir + ' does not exist')
-  if not os.path.exists(bindir)):
+  if not os.path.exists(bindir):
     raise MissingBinDir(bindir + ' does not exist')
   
   
