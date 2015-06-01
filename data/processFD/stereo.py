@@ -49,10 +49,12 @@
 # stereo_root/(calib)/(model)/ascii/(date of aggregation)
 
 import os
+import glob
 import sys
 
 # local package
 from st import stutil
+from ta_common import ta
 
 def main(argv):
   '''
@@ -114,6 +116,16 @@ def main(argv):
   status = {}
   for night_path in argv[1:]:
     status[night_path] = process_night(night_path,goal,retry_level,retry_after)
+    # in the event a non-night path was given, we may still recover something.
+    if status[night_path] not in [True,False]:
+      # process_night returned a dict!
+      if status[night_path]['night'] == 'search':
+        nights = sorted(glob.glob(night_path + '/2*'))
+        if len(nights) == 0: # no nights exist yet, but we can create them!
+          nights = open(ta.stereo_dates).readlines()
+          
+      for np in nights:
+        status[np] = process_night(np,goal,retry_level,retry_after)
   
   return status
   
@@ -134,16 +146,20 @@ def process_night(night_path,goal=8,retry_level=0,retry_after=0):
   '''
   
   try:
-    runinfo = stutil.valid(night_path)
+    info = stutil.valid(night_path)
   except Exception as e:
     print(e)
-    return False
-    
-  
+    return False      
   
   print('Processing ' + night_path)
   
   abspath = os.path.abspath(night_path)
+  
+  if info['night'] == 'search':
+    # let's tell whatever called this to look for some nights.
+    return info
+  
+  
   print(abspath)
   
   
