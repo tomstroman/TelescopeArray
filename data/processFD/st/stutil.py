@@ -81,9 +81,9 @@ def valid(night_path):
   isdate = len(ymd) == 8 and len([i for i in ymd if i.isdigit()]) == 8
   
   if isdate:
-    info[night] = ymd
+    info['night'] = ymd
     ymdpath = os.path.join(srcdir,ymd)
-    info[exists] = os.path.exists(ymdpath)
+    info['exists'] = os.path.exists(ymdpath)
   else:
     raise BadDate(ymd + ' is not a yyyymmdd date')
   
