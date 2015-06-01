@@ -48,8 +48,12 @@
 # similarly organized by model, so the directory structure is
 # stereo_root/(calib)/(model)/ascii/(date of aggregation)
 
-
+import os
 import sys
+
+# local package
+from st import stnight
+
 def main(argv):
   '''
   Interpret command-line arguments. More detail to come.
@@ -107,12 +111,16 @@ def main(argv):
     
   
   # all remaining arguments should be paths to nights.
-  for night in argv[1:]:
-    process_night(night,goal,retry_level,retry_after)
-    
-def process_night(night,goal=8,retry_level=0,retry_after=0):
+  status = {}
+  for night_path in argv[1:]:
+    status[night_path] = process_night(night_path,goal,retry_level,retry_after)
+  
+  return status
+  
+  
+def process_night(night_path,goal=8,retry_level=0,retry_after=0):
   '''
-  Run the entire processing sequence on "night" (a date in yyyymmdd format),
+  Run the entire processing sequence on data in night_path,
   or only run those steps in between enpoints manually specified via
   these keyword arguments:
   goal = 8: process until complete (default)
@@ -124,11 +132,29 @@ def process_night(night,goal=8,retry_level=0,retry_after=0):
   retry_after = 0: retry from beginning (default)
                integer in range [1,7]: final step assumed to be valid
   '''
-  print('Processing ' + night)
+  
+  try:
+    runinfo = stnight.valid(night_path)
+  except Exception as e:
+    print(e)
+    return False
+    
+  
+  
+  print('Processing ' + night_path)
+  
+  abspath = os.path.abspath(night_path)
+  print(abspath)
+  
+  
+  
   first_step = retry_after if retry_level else 0
   
   if goal not in range(first_step,9):
     return False
+  
+  
+  
   
   if goal == 0:
     return True
@@ -163,4 +189,4 @@ def process_night(night,goal=8,retry_level=0,retry_after=0):
 
     
 if __name__ == '__main__':
-  main(sys.argv)
+  status = main(sys.argv)
