@@ -99,7 +99,13 @@ def main(argv):
     argv.pop(istart) # remove '-skip'
   except ValueError:
     retry_after = 0
+  
+  if retry_after > 0 and retry_level == 0:
+    print('Warning: -skip requested but retry_level>0 not specified.')
+    print('Assuming "missing-only" retry (level 1).')
+    retry_level = 1
     
+  
   # all remaining arguments should be paths to nights.
   for night in argv[1:]:
     process_night(night,goal,retry_level,retry_after)
