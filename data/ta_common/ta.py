@@ -21,4 +21,6 @@ fdgeom = os.getenv('RTDATA') + '/fdgeom'
 geo = [fdgeom + '/geo' + i + '.dst.gz' for 
     i in ['br_joint','lr_joint','md_20131002']]
     
-stereo_roots = [i+'/tstroman/stereo' for i in ['/scratch','/hangar']]
+stereo_root = '/scratch/tstroman/stereo'    
+stereo_roots = [stereo_root,'/hangar/tstroman/stereo']
+stereo_dates = stereo_root + '/list-of-dates'

@@ -1,10 +1,15 @@
-# stnight.py
+# stutil.py
 # Thomas Stroman, University of Utah, 2015-06-01
-# A collection of routines and class definition for stereo processing.
+# A collection of utility functions used in stereo processing.
+
+# Currently defined:
+# valid(night_path) to validate processing requests
+
 
 import os
 from ta_common import ta
 
+# define a few exceptions that this function can raise
 class BadStereoRoot(Exception):
   pass
 
@@ -14,11 +19,13 @@ class InvalidPath(Exception):
 class MissingBinDir(Exception):
   pass
 
+class BadDate(Exception):
+  pass
 
 def valid(night_path):
   '''
   Check that the supplied path meets all the requirements for stereo
-  analysis and either return an info tuple or raise an exception.
+  analysis and either return an info dict or raise an exception.
   '''
   abspath = os.path.abspath(night_path)
   
@@ -28,7 +35,7 @@ def valid(night_path):
       stereo_root = root
       break
   else:
-    raise BadStereoRoot(abspath + "doesn't start with one of {0}".format(
+    raise BadStereoRoot(abspath + " doesn't start with one of {0}".format(
         ta.stereo_roots))
   
   # split the remaining path into its directories
@@ -53,4 +60,32 @@ def valid(night_path):
   if not os.path.exists(bindir):
     raise MissingBinDir(bindir + ' does not exist')
   
+  info = {'calib': calib,
+          'model': model,
+          'source': source,
+          'night': '',           # we'll look for this now
+          'exists': None         # only applies to a specific night
+          }
   
+  # see if a specific night has been requested
+  try:
+    ymd = dirs[3]
+  except IndexError:
+    # No night specified - default behavior here is to attempt ALL nights!
+    info['night'] = 'search'
+    return info
+
+  # ymd exists. Validate it as a (probably) real night, based on being an
+  # 8-digit integer
+  
+  isdate = len(ymd) == 8 and len([i for i in ymd if i.isdigit()]) == 8
+  
+  if isdate:
+    info[night] = ymd
+    ymdpath = os.path.join(srcdir,ymd)
+    info[exists] = os.path.exists(ymdpath)
+  else:
+    raise BadDate(ymd + ' is not a yyyymmdd date')
+  
+  return info
+    

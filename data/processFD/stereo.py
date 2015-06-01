@@ -52,7 +52,7 @@ import os
 import sys
 
 # local package
-from st import stnight
+from st import stutil
 
 def main(argv):
   '''
@@ -134,7 +134,7 @@ def process_night(night_path,goal=8,retry_level=0,retry_after=0):
   '''
   
   try:
-    runinfo = stnight.valid(night_path)
+    runinfo = stutil.valid(night_path)
   except Exception as e:
     print(e)
     return False
