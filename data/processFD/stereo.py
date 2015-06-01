@@ -122,7 +122,7 @@ def main(argv):
       if status[night_path]['night'] == 'search':
         nights = sorted(glob.glob(night_path + '/2*'))
         if len(nights) == 0: # no nights exist yet, but we can create them!
-          nights = open(ta.stereo_dates).readlines()
+          nights = open(ta.stereo_dates).read().split('\n')
           
       for np in nights:
         np = os.path.join(night_path,np)
