@@ -103,4 +103,4 @@ class Night(object):
     
   
   def __repr__(self):
-    return '/'.join([calib,model,source,ymd])
+    return '/'.join([self.calib,self.model,self.source,self.ymd])
