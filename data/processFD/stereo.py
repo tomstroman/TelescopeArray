@@ -125,6 +125,7 @@ def main(argv):
           nights = open(ta.stereo_dates).readlines()
           
       for np in nights:
+        np = os.path.join(night_path,np)
         status[np] = process_night(np,goal,retry_level,retry_after)
   
   return status
