@@ -3,7 +3,9 @@
 # A collection of utility functions used in stereo processing.
 
 # Currently defined:
-# valid(night_path) to validate processing requests
+# some exceptions
+# valid(night_path): function to validate processing requests
+# Night: class to contain information about night being processed
 
 
 import os
@@ -88,4 +90,17 @@ def valid(night_path):
     raise BadDate(ymd + ' is not a yyyymmdd date')
   
   return info
+
+  
+  
+  
+class Night(object):
+  def __init__(self):
+    self.ymd = ''
+    self.calib = ''
+    self.model = ''
+    self.source = ''
     
+  
+  def __repr__(self):
+    return '/'.join([calib,model,source,ymd])

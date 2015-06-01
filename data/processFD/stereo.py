@@ -54,6 +54,7 @@ import sys
 
 # local package
 from st import stutil
+
 from ta_common import ta
 
 def main(argv):
@@ -122,11 +123,10 @@ def main(argv):
       if status[night_path]['night'] == 'search':
         nights = sorted(glob.glob(night_path + '/2*'))
         if len(nights) == 0: # no nights exist yet, but we can create them!
-          nights = open(ta.stereo_dates).read().split('\n')
-          
-      for np in nights:
-        np = os.path.join(night_path,np)
-        status[np] = process_night(np,goal,retry_level,retry_after)
+          nights = open(ta.stereo_dates).read().split('\n')            
+        for np in nights:
+          np = os.path.join(night_path,np)
+          status[np] = process_night(np,goal,retry_level,retry_after)
   
   return status
   
@@ -158,22 +158,25 @@ def process_night(night_path,goal=8,retry_level=0,retry_after=0):
   
   if info['night'] == 'search':
     # let's tell whatever called this to look for some nights.
-    return info
-  
-  
-  print(abspath)
-  
-  
-  
-  first_step = retry_after if retry_level else 0
-  
+    return info    
+    
+  # To get this far, we now have a valid night. Verify that other
+  # arguments make sense.
+  print(abspath)   
+  first_step = retry_after if retry_level else 0  
   if goal not in range(first_step,9):
-    return False
+    return False        
   
+  night = stutil.Night()
+  night.ymd = info['night']
+  night.calib = info['calib']
+  night.model = info['model']
+  night.source = info['source']
   
   
   
   if goal == 0:
+    print(night)
     return True
   
   # for now, placeholders for each processing step.
