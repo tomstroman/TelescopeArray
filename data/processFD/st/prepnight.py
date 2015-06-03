@@ -74,6 +74,10 @@ def create_BRLR_downlist(path):
   out = dump.stdout.readlines()
   err = dump.stderr.read()
 
+  if err != len(dstfiles) * tabin.dststderr:
+    print('Warning! Non-trivial stderr from dstdump:')
+    print(err)
+    
   # keep track of events in each part, using a dict
   n = {}
   
@@ -95,4 +99,16 @@ def create_BRLR_downlist(path):
   
   return buf
 
+def create_MD_downlist(path):
+  '''
+  Given the path to a location of HRAW1 and STPLN DST files,
+  create the list of downward-event times for stereo-matching.
+  Return the list as a string.
+  '''
+  dstfiles = sorted(glob.glob(path + '/*.down.dst.gz'))
+  for dst in dstfiles:
+    # infer the part number PP from the filename yYYYYmMMdDDpPP.down.dst.gz
+    pp = re.os.path.basename(dst)[12:14]
+    cmd = [tabin.dstdump,'-hraw1','-stpln',dst]
+    dump = sp.Popen(cmd,stderr=sp.PIPE,stdout=sp.PIPE)
   
