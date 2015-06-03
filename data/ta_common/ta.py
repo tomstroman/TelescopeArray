@@ -3,6 +3,7 @@ import os
 t0 = 2454282.5 # Julian date of 2007-07-01 00:00:00.0 UTC
 
 sites = ['brm','lr','md','tale']
+sa = ['br','lr','md','tl']
 sitenames = ['black-rock','long-ridge','middle-drum','tale']
 
 
