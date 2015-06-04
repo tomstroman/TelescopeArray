@@ -3,8 +3,8 @@
 # Given a Night object, prepare it for stereo analysis. This includes:
 # 0. Determine where to find "downward" monocular data from each FD site
 # 1. Identify active sites this night
-# 2. Ensure the output directory exists (create if necessary)
-# 3. Create lists of downward-event timestamps
+# 2. Create lists of downward-event timestamps
+# 3. Ensure the output directory exists (create if necessary)
 
 import os
 import glob
@@ -14,6 +14,43 @@ from ta_common import ta
 from ta_common import tabin
 from ta_common import util
 
+def prep(night):
+  '''
+  Perform the monocular-data preparation on one night's data. Return
+  True for successful processing, False otherwise.
+  '''
+  # locate relevant directories
+  mono_source(night)
+  for key in ['down','data']:
+    if not os.path.exists(night.dirs[key]):
+      print('Error: missing ' + night.dirs[key])
+      return False
+      
+  # ensure we have enough sites for stereo
+  sites = count_sites(night)
+  if sites < 2:
+    print('Too few active FD sites on {0}; skipping.'.format(night.ymd))
+    return False
+    
+  # make the downward-event lists
+  create_downlists(night)
+  for downlist in night.lists['down'].values():
+    if not os.path.exists(downlist):
+      print('Error: missing ' + downlist)
+      return False
+  
+  # create the output directory for this night's stereo analysis
+  try:
+    os.mkdir(night.dirs['root'])
+  except OSError as error:
+    if 'File exists' in error:
+      pass
+    else:
+      raise error
+    
+  return True
+
+  
 def mono_source(night):
   '''
   Determine where the processed monocular data is located. If it was produced
@@ -148,11 +185,13 @@ def create_downlists(night):
   and construct the downlists; if they exist and retry isn't specified,
   do nothing.
   '''
+  night.lists['down'] = {}
   for site,path in night.dirs['mono'].items():
     # the desired output filename
     downlist = os.path.join(path,'downlist-{0}-{1}.txt'.format(
         ta.sa.index(site),night.ymd))    
 
+    night.lists['down'][site] = downlist
     # unless we've specified full retry, don't re-create it
     if os.path.exists(downlist) and night.retry[site] < 2:
       continue
@@ -162,11 +201,12 @@ def create_downlists(night):
     else:
       buf = create_BRLR_downlist(path)
     print('Writing ' + downlist)  
+    
     with open(downlist,'w') as out:
       out.write(buf)
       
     
-  
+
   
   
   

@@ -52,9 +52,9 @@ import os
 import glob
 import sys
 
-# local package
+# local packages
 from st import stutil
-
+from st import prepnight
 from ta_common import ta
 
 def main(argv):
@@ -185,7 +185,8 @@ def process_night(night_path,goal=8,retry_level=0,retry_after=0,
   
   # for now, placeholders for each processing step.
   if first_step < 1 <= goal:
-    pass
+    if not prepnight.prep(night):
+      return False
   
   if first_step < 2 <= goal:
     pass

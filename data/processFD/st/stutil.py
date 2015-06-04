@@ -115,6 +115,7 @@ class Night(object):
     self.retry = dict([(s,info['retry']) for s in ta.sa[:-1]])
     
     self.dirs = {'root': info['ymdpath']}
+    self.lists = {}
   
   def __repr__(self):
     return self.dirs['root']
