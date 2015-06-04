@@ -67,7 +67,7 @@ def mono_source(night):
     night.dirs['data'] = os.path.join(ta.stereo_root,
         night.calib,'tafd-data',night.ymd)
   else:
-    night.dirs['down'] = os.path.pardir(outd)
+    night.dirs['down'] = os.path.split(outd)[0]
     night.dirs['data'] = outd
     
 
@@ -211,7 +211,7 @@ def create_downlists(night):
     with open(downlist,'w') as out:
       out.write(buf)
       
-define make_directories(night):
+def make_directories(night):
   '''
   Attempts to create the directories needed for output of stereo analysis.
   This includes the "root" directory and each site combination possible
