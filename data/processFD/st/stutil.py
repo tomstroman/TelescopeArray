@@ -9,7 +9,9 @@
 
 
 import os
+
 from ta_common import ta
+
 
 # define a few exceptions that this function can raise
 class BadStereoRoot(Exception):
@@ -66,7 +68,9 @@ def valid(night_path):
           'model': model,
           'source': source,
           'night': '',           # we'll look for this now
-          'exists': None         # only applies to a specific night
+          'exists': None,        # only applies to a specific night
+          'bindir': bindir,
+          'ymdpath': ''
           }
   
   # see if a specific night has been requested
@@ -84,8 +88,8 @@ def valid(night_path):
   
   if isdate:
     info['night'] = ymd
-    ymdpath = os.path.join(srcdir,ymd)
-    info['exists'] = os.path.exists(ymdpath)
+    info['ymdpath'] = os.path.join(srcdir,ymd)
+    info['exists'] = os.path.exists(info['ymdpath'])    
   else:
     raise BadDate(ymd + ' is not a yyyymmdd date')
   
@@ -95,12 +99,32 @@ def valid(night_path):
   
   
 class Night(object):
-  def __init__(self):
-    self.ymd = ''
-    self.calib = ''
-    self.model = ''
-    self.source = ''
+  def __init__(self,info):
+    # these need to be defined for __repr__ to work, but will be
+    # populated by whatever wants this class
+    self.ymd = info['night']
+    self.calib = info['calib']
+    self.model = info['model']
+    self.source = info['source']
+
+    self.rc = [info['fdtp'],info['stpfl']]    
     
+    # can't use dict comprehension in Python 2.6
+    # right now, each site gets the same retry level, but I want to
+    # write the deeper code in a way that can handle sites independently.
+    self.retry = dict([(s,info['retry']) for s in ta.sa[:-1]])
+    
+    self.dirs = {'root': info['ymdpath']}
   
   def __repr__(self):
-    return '/'.join([self.calib,self.model,self.source,self.ymd])
+    return self.dirs['root']
+  
+  #def get_directories(self):
+    '''
+    Determine where to look for input and write output.
+    '''
+    #self.outdir = os.path.join(
+  
+  #def prep_mono(self):
+    #for site in self.sites:
+    

@@ -131,7 +131,8 @@ def main(argv):
   return status
   
   
-def process_night(night_path,goal=8,retry_level=0,retry_after=0):
+def process_night(night_path,goal=8,retry_level=0,retry_after=0,
+                  fdtp='ghdef',stpfl='mdghd'):
   '''
   Run the entire processing sequence on data in night_path,
   or only run those steps in between enpoints manually specified via
@@ -167,11 +168,14 @@ def process_night(night_path,goal=8,retry_level=0,retry_after=0):
   if goal not in range(first_step,9):
     return False        
   
-  night = stutil.Night()
-  night.ymd = info['night']
-  night.calib = info['calib']
-  night.model = info['model']
-  night.source = info['source']
+  # add profile-reconstruction information to info 
+  info['retry'] = retry_level
+  info['fdtp'] = fdtp
+  info['stpfl'] = stpfl
+  
+  # create the Night object
+  night = stutil.Night(info)
+
   
   
   
