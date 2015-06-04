@@ -142,4 +142,31 @@ def create_MD_downlist(path):
         
   return buf 
     
+def create_downlists(night):
+  '''
+  From a Night object, get the paths to individual sites' data
+  and construct the downlists; if they exist and retry isn't specified,
+  do nothing.
+  '''
+  for site,path in night.dirs['mono'].items():
+    # the desired output filename
+    downlist = os.path.join(path,'downlist-{0}-{1}.txt'.format(
+        ta.sa.index(site),night.ymd))    
+
+    # unless we've specified full retry, don't re-create it
+    if os.path.exists(downlist) and night.retry[site] < 2:
+      continue
+    
+    if site == 'md':
+      buf = create_MD_downlist(path)
+    else:
+      buf = create_BRLR_downlist(path)
+    print('Writing ' + downlist)  
+    with open(downlist,'w') as out:
+      out.write(buf)
+      
+    
+  
+  
+  
   
