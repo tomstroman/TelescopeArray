@@ -66,6 +66,8 @@ def create_BRLR_downlist(path):
   Return the list as a string.
   '''
   
+  buf = ''
+  
   # assemble and execute the dstdump command, capturing stdout and stderr
   dstfiles = sorted(glob.glob(path + '/*.down.dst.gz'))
   cmd = [tabin.dstdump,'-brplane','-lrplane'] + dstfiles
@@ -81,7 +83,6 @@ def create_BRLR_downlist(path):
   # keep track of events in each part, using a dict
   n = {}
   
-  buf = ''
   for line in out:
     if 'Part' in line:
       s = line.split()
@@ -105,10 +106,39 @@ def create_MD_downlist(path):
   create the list of downward-event times for stereo-matching.
   Return the list as a string.
   '''
+  
+  buf = ''
+  
   dstfiles = sorted(glob.glob(path + '/*.down.dst.gz'))
+
   for dst in dstfiles:
+    n = 0
+    
     # infer the part number PP from the filename yYYYYmMMdDDpPP.down.dst.gz
     pp = re.os.path.basename(dst)[12:14]
+    
     cmd = [tabin.dstdump,'-hraw1','-stpln',dst]
     dump = sp.Popen(cmd,stderr=sp.PIPE,stdout=sp.PIPE)
+
+    out = dump.stdout.readlines()
+    err = dump.stderr.read()
+    
+    if err != tabin.dststderr:
+      print('Warning! Non-trivial stderr from dstdump:')
+      print(err)
+    
+    # need to keep track of this to avoid multiple reports
+    new_event = False
+    for line in out:
+      if 'stat' in line:
+        # convert from Julian time to UTC time (12h difference)
+        t = (hms2sec(line.split()[3]) + 43200) % 86400
+        new_event = True
+      elif 'tracklength' in line and new_event:
+        l = line.split()[-1]
+        n += 1
+        buf += '{0:.9f} {1} {2} {3} {4}\n'.format(t,l,pp,n-1,n)
+        
+  return buf 
+    
   
