@@ -19,6 +19,7 @@ def prep(night):
   Perform the monocular-data preparation on one night's data. Return
   True for successful processing, False otherwise.
   '''
+  print('Preparing monocular data.')
   # locate relevant directories
   mono_source(night)
   for key in ['down','data']:
