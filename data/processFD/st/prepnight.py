@@ -115,7 +115,7 @@ def create_MD_downlist(path):
     n = 0
     
     # infer the part number PP from the filename yYYYYmMMdDDpPP.down.dst.gz
-    pp = re.os.path.basename(dst)[12:14]
+    pp = os.path.basename(dst)[12:14]
     
     cmd = [tabin.dstdump,'-hraw1','-stpln',dst]
     dump = sp.Popen(cmd,stderr=sp.PIPE,stdout=sp.PIPE)
