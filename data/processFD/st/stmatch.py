@@ -121,15 +121,15 @@ def isolate_triples(night):
   buf = ''
   
   # if any pair of sites has no matches, there are no triple matches.
-  if 0 in [len(m) for m in night.data['matches']]:
+  if 0 in [len(m) for m in night.data['match']]:
     return buf
     
   # If an event occurs in two matchlists, we assume it's in the third one.
   # Search the two that are likely to be shortest: namely, the lists involving
   # the Middle Drum detector. If an MD event shows up in both lists, it's a 
   # triple.
-  m1 = night.data['matches']['bm'].split('\n')
-  m2 = night.data['matches']['lm'].split('\n')
+  m1 = night.data['match']['bm'].split('\n')
+  m2 = night.data['match']['lm'].split('\n')
   
   k = 0
   for e1 in m1[:-1]:
@@ -146,15 +146,15 @@ def isolate_triples(night):
     b,l,m = [' '.join(trip.split()[i:i+5]) for i in range(0,15,5)]
     
     # remove from bl
-    t = night.data['matches']['bl'].replace(' '.join([b,l]) + '\n','')
-    night.data['matches']['bl'] = t
+    t = night.data['match']['bl'].replace(' '.join([b,l]) + '\n','')
+    night.data['match']['bl'] = t
     
     # remove from bm
-    t = night.data['matches']['bm'].replace(' '.join([b,m]) + '\n','')
-    night.data['matches']['bm'] = t
+    t = night.data['match']['bm'].replace(' '.join([b,m]) + '\n','')
+    night.data['match']['bm'] = t
     
     # remove from lm
-    t = night.data['matches']['lm'].replace(' '.join([l,m]) + '\n','')
-    night.data['matches']['lm'] = t
+    t = night.data['match']['lm'].replace(' '.join([l,m]) + '\n','')
+    night.data['match']['lm'] = t
   
   return buf
