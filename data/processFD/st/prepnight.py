@@ -42,13 +42,8 @@ def prep(night):
       return False
   
   # create the output directory for this night's stereo analysis
-  try:
-    os.mkdir(night.dirs['root'])
-  except OSError as error:
-    if 'File exists' in error:
-      pass
-    else:
-      raise error
+  make_directories(night)
+
     
   return True
 
@@ -187,7 +182,8 @@ def create_downlists(night):
   and construct the downlists; if they exist and retry isn't specified,
   do nothing.
   '''
-  night.lists['down'] = {}
+  night.lists['down'] = {} # keep the filenames
+  night.data['down'] = {} # and the file contents, while we're at it
   for site,path in night.dirs['mono'].items():
     # the desired output filename
     downlist = os.path.join(path,'downlist-{0}-{1}.txt'.format(
@@ -195,19 +191,49 @@ def create_downlists(night):
 
     night.lists['down'][site] = downlist
     # unless we've specified full retry, don't re-create it
-    if os.path.exists(downlist) and night.retry[site] < 2:
-      continue
+    if night.retry[site] < 2:
+      # if it already exists, let's read it into memory and move on
+      try: 
+        night.data['down'][site] = open(downlist,'r').read()
+        continue
+      except IOError as e:
+        if 'No such file or directory' in e:
+          pass
+        else:
+          raise e
     
     print('Generating ' + downlist)  
     if site == 'md':
       buf = create_MD_downlist(path)
     else:
       buf = create_BRLR_downlist(path)
-        
+    night.data['down'][site] = buf    
     with open(downlist,'w') as out:
       out.write(buf)
       
-    
+define make_directories(night):
+  '''
+  Attempts to create the directories needed for output of stereo analysis.
+  This includes the "root" directory and each site combination possible
+  given the set of active FDs.
+  '''
+  make_dirs = [night.dirs['root']]
 
+  night.dirs['st'] = {}
   
+  for comb,sites in ta.psites.items():
+    # check whether *all* sites required for this combination 
+    # are present in this night
+    if False not in [i in night.dirs['mono'].keys() for i in sites]:
+      cdir = os.path.join(night.dirs['root'],comb)
+      night.dirs['st'][comb] = cdir
+      make_dirs.append(cdir)
   
+  for d in make_dirs:
+    try:
+      os.mkdir(d)
+    except OSError as error:
+      if 'File exists' in error:
+        pass
+      else:
+        raise error
