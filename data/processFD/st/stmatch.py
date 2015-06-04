@@ -9,6 +9,7 @@
 # 3. For all 4 site combinations, remove known artificial sources
 # 4. Create individual data files per event per site with common numbering
 
+import os
 from ta_common import ta
 
 def get_matched_events(night):
@@ -67,6 +68,9 @@ def find_matches(night):
     with open(matchlist,'w') as out:
       out.write(night.data['match'][comb])
 
+  # test that files exist here?
+  return True
+  
 def scan_2down(down1,down2,window):
   '''
   Given two strings as the entire contents of two "downlist" files,
@@ -86,10 +90,10 @@ def scan_2down(down1,down2,window):
   
   k = 0 # keep track of starting place in down2 as we...
   # loop over lines in down1, looking for matches in d2
-  for e1 in d1:
+  for e1 in d1[:-1]:
     t1 = float(e1.split()[0])
     l = k # current position in d2
-    for e2 in d2[k:]:
+    for e2 in d2[k:-1]:
       l += 1 
       t2 = float(e2.split()[0])
       if abs(t2 - t1) < window: # we have a match!
@@ -128,10 +132,10 @@ def isolate_triples(night):
   m2 = night.data['matches']['lm'].split('\n')
   
   k = 0
-  for e1 in m1:
+  for e1 in m1[:-1]:
     md = ' '.join(e1.split()[5:10])
     l = k
-    for e2 in m2[k:]:
+    for e2 in m2[k:-1]:
       if md in e2:
         k = l
         buf += ' '.join(e1.split()[0:5] + [e2]) + '\n'
