@@ -132,12 +132,13 @@ def create_MD_downlist(path):
     for line in out:
       if 'stat' in line:
         # convert from Julian time to UTC time (12h difference)
-        t = (hms2sec(line.split()[3]) + 43200) % 86400
+        t = (util.hms2sec(line.split()[3]) + 43200) % 86400
         new_event = True
       elif 'tracklength' in line and new_event:
         l = line.split()[-1]
         n += 1
         buf += '{0:.9f} {1} {2} {3} {4}\n'.format(t,l,pp,n-1,n)
+        new_event = False
         
   return buf 
     
