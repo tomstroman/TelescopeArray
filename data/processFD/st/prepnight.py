@@ -29,7 +29,8 @@ def prep(night):
   # ensure we have enough sites for stereo
   sites = count_sites(night)
   if sites < 2:
-    print('Too few active FD sites on {0}; skipping.'.format(night.ymd))
+    print('Too few active FD sites ({0}) on {1}; skipping.'.format(
+        sites,night.ymd))
     return False
     
   # make the downward-event lists
@@ -85,9 +86,9 @@ def count_sites(night):
   # loop over site names and corresponding 2-letter abbreviations
   for s,sa in zip(ta.sitenames[:-1],ta.sa[:-1]):
     if night.source == 'nature':
-      sitedir = os.path.join(night.dirs['data'],s,night.ymd)
+      sitedir = os.path.join(night.dirs['down'],s,night.ymd)
     else:
-      sitedir = os.path.join(night.dirs['data'],night.ymd,'trump',s)
+      sitedir = os.path.join(night.dirs['down'],night.ymd,'trump',s)
 
     if os.path.exists(sitedir):
       night.dirs['mono'][sa] = sitedir
@@ -189,24 +190,23 @@ def create_downlists(night):
   for site,path in night.dirs['mono'].items():
     # the desired output filename
     downlist = os.path.join(path,'downlist-{0}-{1}.txt'.format(
-        ta.sa.index(site),night.ymd))    
+        night.ymd,ta.sa.index(site)))    
 
     night.lists['down'][site] = downlist
     # unless we've specified full retry, don't re-create it
     if os.path.exists(downlist) and night.retry[site] < 2:
       continue
     
+    print('Generating ' + downlist)  
     if site == 'md':
       buf = create_MD_downlist(path)
     else:
       buf = create_BRLR_downlist(path)
-    print('Writing ' + downlist)  
-    
+        
     with open(downlist,'w') as out:
       out.write(buf)
       
     
 
-  
   
   
