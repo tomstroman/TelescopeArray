@@ -10,9 +10,11 @@
 # 4. Create individual data files per event per site with common numbering
 
 import os
+import glob
 import subprocess as sp
 from ta_common import ta
 from ta_common import util
+from ta_common import tabin
 
 def get_matched_events(night):
   '''
@@ -265,7 +267,7 @@ def get_event_dsts(night):
       
       buf += '{0}\n'.format(pos)
       dstsplit_output = obase + '-{0:05d}.dst.gz'.format(outnum)
-      mv_cmd.append('mv -v {0} {1}'.format(dstsplit_output,outdst))
+      mv_cmd.append('mv {0} {1}'.format(dstsplit_output,outdst))
       outnum += 1
       
     # make sure we still want something from this file
@@ -285,16 +287,21 @@ def get_event_dsts(night):
     out = split.stdout.read()
     err = split.stderr.read()
     
-    if out != 'Reading DST file: ' + in_dst:
+    no_remove = False
+    if out != 'Reading DST file: ' + in_dst + '\n':
       print('Warning! Anomalous stdout when splitting:')
+      no_remove = True
       print(out)
       
     if err != tabin.dststderr:
       print('Warning! Anomalous stderr when splitting:')
+      no_remove = True
       print(err)
       
     os.system(';'.join(mv_cmd))
     
+    if not no_remove:
+      os.remove(wlist)
     
 def survey_dst_files(night):
   '''
@@ -316,8 +323,8 @@ def survey_dst_files(night):
         s_event = line.split()[i0:i0+5]
         
         # infer the filename of the parent DST
-        in_dst = os.path.join(night.dirs['down'][sa],
-            'y{0}m{1}d{2}p{3:02d}.down.dst.gz'.format(y,m,d,,int(s_event[2])))
+        in_dst = os.path.join(night.dirs['mono'][sa],
+            'y{0}m{1}d{2}p{3:02d}.down.dst.gz'.format(y,m,d,int(s_event[2])))
             
         # for correctly naming the output  
         event = (comb,'{0}-{1:05d}'.format(sa,counter))
