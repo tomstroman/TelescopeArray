@@ -117,6 +117,8 @@ class Night(object):
     self.dirs = {'root': info['ymdpath']}
     self.lists = {}
     self.data = {}
+    
+    self.errors = []
   
   def __repr__(self):
     return self.dirs['root']
