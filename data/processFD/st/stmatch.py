@@ -24,7 +24,7 @@ def get_matched_events(night):
   
   Return True if successful, False otherwise.
   '''
-  
+  print('Finding matches.')
   find_matches(night)
   for matchlist in night.lists['match'].values():
     if not os.path.exists(matchlist):
