@@ -10,8 +10,10 @@
 # 4. Create individual data files per event per site with common numbering
 
 import os
+import subprocess as sp
 from ta_common import ta
 from ta_common import util
+
 def get_matched_events(night):
   '''
   Perform the entire process of time-matching events, classifying by site
@@ -32,7 +34,8 @@ def get_matched_events(night):
     if not os.path.exists(clflist):
       print('Error: missing ' + clflist)
       return False
-      
+  
+  get_event_dsts(night)
   return True
   
   
@@ -220,5 +223,116 @@ def remove_clf(night):
       with open(matchlist,'w') as out:
         out.write(night.data['match'][comb])
     
+    
+def get_event_dsts(night):
+  '''
+  Invoke the dstsplit command to extract single-event DST files from
+  the parent collections. To keep I/O to a minimum, identify requests from
+  each site combination, and handle bookkeeping behind the scenes to make sure
+  the extracted events end up with the correct paths and filenames.
+  '''
+  existing = {}
+  for comb,odir in night.dirs['st'].items():
+    existing[comb] = sorted(glob.glob(os.path.join(odir,'??-?????.dst.gz')))
+  
+  
+  # determine which events are requested, and by which combination,
+  # and with what final number
+  survey_dst_files(night)
+  
+  
+  
+  # loop over identified files, running dstsplit once per file
+  # and then renaming the output
+  for in_dst in sorted(night.data['pos'].keys()):
         
+    buf = ''
+    outnum = 0
+    odir = os.path.dirname(in_dst)
+    obase = os.path.join(odir,'tmpdst')
+    
+    # each file produced will be moved individually; save the commands here
+    mv_cmd = []
+    
+    for pos,event in sorted(night.data['pos'][in_dst].items())
+      comb,num = event
+      
+      outdst = os.path.join(night.dirs['st'][comb],num + '.dst.gz')
+      site = num[0:2]
+      # unless retry is requested, skip existing files
+      if outdst in existing[comb] and night.retry[site] < 2:
+        continue
+      
+      buf += '{0}\n'.format(pos)
+      dstsplit_output = obase + '-{0:05d}.dst.gz'.format(outnum)
+      mv_cmd.append('mv -v {0} {1}'.format(dstsplit_output,outdst))
+      outnum += 1
+      
+    # make sure we still want something from this file
+    if len(buf) == 0:
+      continue
+    
+    print('Splitting {0} into event files (count: {1})'.format(
+        os.path.basename(in_dst),outnum))
+        
+    wlist = os.path.join(odir,'wantlist-' + os.path.basename(in_dst) + '.txt')
+    with open(wlist,'w') as outw:
+      outw.write(buf.strip()) # a trailing \n may cause segfault
+    
+    cmd = [tabin.dstsplit,'-w',wlist,'-ob',obase,in_dst]
+    split = sp.Popen(cmd,stdout=sp.PIPE,stderr=sp.PIPE)
+      
+    out = split.stdout.read()
+    err = split.stderr.read()
+    
+    if out != 'Reading DST file: ' + in_dst:
+      print('Warning! Anomalous stdout when splitting:')
+      print(out)
+      
+    if err != tabin.dststderr:
+      print('Warning! Anomalous stderr when splitting:')
+      print(err)
+      
+    os.system(';'.join(mv_cmd))
+    
+    
+def survey_dst_files(night):
+  '''
+  Add to a "positions" dict from a matchlist, with each key being a file,
+  and each value being itself a dict of event position and an event tuple,
+  itself consisting of the site combination and the output event number.
+  '''
+  
+  y,m,d = [night.ymd[a:b] for (a,b) in [(0,4),(4,6),(6,8)]]
+  
+  # nested dict for positions, by file then by number
+  night.data['pos'] = {}
+  
+  for comb,matchlist in night.data['match'].items():
+    counter = 0
+    for line in matchlist.split('\n')[:-1]:
+      i0 = 0 # select 5 fields in line starting from here
+      for sa in ta.psites[comb]:
+        s_event = line.split()[i0:i0+5]
+        
+        # infer the filename of the parent DST
+        in_dst = os.path.join(night.dirs['down'][sa],
+            'y{0}m{1}d{2}p{3:02d}.down.dst.gz'.format(y,m,d,,int(s_event[2])))
+            
+        # for correctly naming the output  
+        event = (comb,'{0}-{1:05d}'.format(sa,counter))
+        
+        # where within the part is it?
+        ev_pos = int(s_event[3])
+        
+        try:
+          night.data['pos'][in_dst][ev_pos] = event
+        except KeyError:
+          night.data['pos'][in_dst] = {ev_pos: event}
+        i0 += 5 # prepare to start from a different place in the same line
+      
+      counter += 1
+  
+  
+      
     
