@@ -189,3 +189,10 @@ def timecorr(daqID):
   '''
   return 'y{0}m{1}d{2}p{3}_site{4}_timecorr.txt'.format(
       daqID[0:4],daqID[4:6],daqID[6:8],daqID[8:10],daqID[10] )
+      
+def is_clf(sec):
+  '''
+  Return True if the provided time is consistent with the CLF,
+  false otherwise.
+  '''
+  return (sec % 0.1) < 0.001 and not (32 <= (sec % 1800) < 1797)
