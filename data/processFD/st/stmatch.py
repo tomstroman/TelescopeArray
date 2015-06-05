@@ -201,7 +201,7 @@ def remove_clf(night):
     print('Generating ' + clflist)
     to_remove = []
     for line in match.split('\n')[:-1]:
-      if True in [util.is_clf(float(line.split()[i])) for i in [0,6]]:
+      if True in [util.is_clf(float(line.split()[i])) for i in [0,5]]:
         to_remove.append(line + '\n')
         
     buf = ''.join(to_remove)
