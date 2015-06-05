@@ -55,6 +55,7 @@ import sys
 # local packages
 from st import stutil
 from st import prepnight
+from st import stmatch
 from ta_common import ta
 
 def main(argv):
@@ -111,8 +112,13 @@ def main(argv):
     print('Warning: -skip requested but retry_level>0 not specified.')
     print('Assuming "missing-only" retry (level 1).')
     retry_level = 1
+
+  # currently, step 2 requires step 1, so force step 1 to happen if
+  # step 2 is requested
+  if retry_after == 1:
+    print('Alert: -skip 1 is not correctly implemented. Aborting.')
+    sys.exit()
     
-  
   # all remaining arguments should be paths to nights.
   status = {}
   for night_path in argv[1:]:
@@ -189,7 +195,8 @@ def process_night(night_path,goal=8,retry_level=0,retry_after=0,
       return False
   
   if first_step < 2 <= goal:
-    pass
+    if not stmatch.get_matched_events(night):
+      return False
   
   if first_step < 3 <= goal:
     pass

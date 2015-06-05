@@ -11,7 +11,7 @@
 
 import os
 from ta_common import ta
-
+from ta_common import util
 def get_matched_events(night):
   '''
   Perform the entire process of time-matching events, classifying by site
@@ -21,7 +21,21 @@ def get_matched_events(night):
   Return True if successful, False otherwise.
   '''
   
-  return find_matches(night)
+  find_matches(night)
+  for matchlist in night.lists['match'].values():
+    if not os.path.exists(matchlist):
+      print('Error: missing ' + matchlist)
+      return False
+
+  remove_clf(night)
+  for clflist in night.lists['clf'].values():
+    if not os.path.exists(clflist):
+      print('Error: missing ' + clflist)
+      return False
+      
+  return True
+  
+  
   
 def find_matches(night):
   '''
@@ -53,6 +67,7 @@ def find_matches(night):
           raise e
     
     # either it doesn't exist yet or we've requested a retry.
+    print('Generating ' + matchlist)
     if comb in ta.nps[:-1]: # 2-way combinations
       down1 = night.data['down'][ta.psites[comb][0]]
       down2 = night.data['down'][ta.psites[comb][1]]
@@ -158,3 +173,52 @@ def isolate_triples(night):
     night.data['match']['lm'] = t
   
   return buf
+  
+def remove_clf(night):
+  '''
+  Scan a list of time-matched events for CLF-compatible timestamps and remove
+  them from the list, writing them instead to a list of CLF events that won't
+  be processed.
+  '''
+
+  night.lists['clf'] = {}
+  night.data['clf'] = {}
+    
+  for comb,match in night.data['match'].items():
+    clflist = os.path.join(night.dirs['st'][comb],'rejectclf.txt')
+    night.lists['clf'][comb] = clflist
+    
+    if False not in [night.retry[s] < 2 for s in ta.psites[comb]]:
+      try:
+        night.data['clf'][comb] = open(clflist).read()
+        continue
+      except IOError as e:
+        if 'No such file or directory' in e:
+          pass
+        else:
+          raise e
+    
+    print('Generating ' + clflist)
+    to_remove = []
+    for line in match.split('\n')[:-1]:
+      if True in [util.is_clf(float(line.split()[i])) for i in [0,6]]:
+        to_remove.append(line + '\n')
+        
+    buf = ''.join(to_remove)
+    night.data['clf'][comb] = buf
+    with open(clflist,'w') as out:
+      out.write(buf)
+      
+    if len(to_remove) > 0:
+      matchlist = night.lists['match'][comb]
+      print('Pruning ' + matchlist)
+      
+      for line in to_remove:
+        t = night.data['match'][comb].replace(line,'')
+        night.data['match'][comb] = t
+      
+      with open(matchlist,'w') as out:
+        out.write(night.data['match'][comb])
+    
+        
+    
