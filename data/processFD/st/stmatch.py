@@ -254,7 +254,7 @@ def get_event_dsts(night):
     # each file produced will be moved individually; save the commands here
     mv_cmd = []
     
-    for pos,event in sorted(night.data['pos'][in_dst].items())
+    for pos,event in sorted(night.data['pos'][in_dst].items()):
       comb,num = event
       
       outdst = os.path.join(night.dirs['st'][comb],num + '.dst.gz')
