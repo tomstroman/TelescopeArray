@@ -126,5 +126,6 @@ for sa,siteid in {'br': 0, 'lr': 1}.items():
     cmd = ' '.join([tabin.fdplane,'-geo ',ta.geo[siteid],'-output 1000',
         dst,'&>',dst.replace('dst.gz','fdplane.out')])
     os.system(cmd)
-    
+  os.chdir(os.path.pardir)
+  
   
