@@ -1,3 +1,5 @@
+# for import into init_tables.py
+
 tables = [
     ('Sites', 'id INTEGER PRIMARY KEY, shortname TEXT, name TEXT, longname TEXT'),
     
