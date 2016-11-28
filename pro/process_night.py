@@ -7,7 +7,7 @@
 from step import steps
 
 
-def process_night(night, start_code=None):
+def process_night(night, start_code=None, end_code=None):
     """
     Arguments:
     night is an 8-digit integer giving a UTC date in YYYYMMDD format.
@@ -17,11 +17,12 @@ def process_night(night, start_code=None):
     """
 
     for step in steps:
-        if start_code > step.id:
+        if not start_code <= step.id <= end_code:
             continue
+
         print step
         pass
-      
+
 if __name__ == '__main__':
     process_night(0)
 
