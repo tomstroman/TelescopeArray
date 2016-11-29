@@ -142,6 +142,7 @@ def _get_paths_to_logs(db_downloads):
     log files as keys, and the value is a list of paths to each log file.
     """
     paths_to_log = {}
+    print 'Getting paths to logs.'
     for download, site in db_downloads:
         normal_log = os.path.join(download, 'daq-ctrl/y*_*.log')
         alt_log = os.path.join(download, 'daq-ctrl/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9].log')
