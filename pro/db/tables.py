@@ -9,9 +9,9 @@ fadc_tables = [
 
         ('Runnights', 'date INTEGER, site INTEGER REFERENCES Sites, download TEXT REFERENCES Downloads, logfile TEXT, PRIMARY KEY (date, site)'),
 
-        ('Parts', 'part11 INTEGER PRIMARY KEY, date INTEGER, part INTEGER, site INTEGER REFERENCES Sites, daqtrig INTEGER, daqcams INTEGER, FOREIGN KEY (date, site) REFERENCES Runnights(date, site)'),
+        ('Parts', 'part11 INTEGER PRIMARY KEY, date INTEGER, part INTEGER, site INTEGER REFERENCES Sites, daqtrig INTEGER, daqcams INTEGER, daqsigma REAL, FOREIGN KEY (date, site) REFERENCES Runnights(date, site)'),
 
-        ('Filesets', 'date INTEGER, part11 INTEGER REFERENCES Parts, ctdprefix TEXT PRIMARY KEY'),
+        ('Filesets', 'part11 INTEGER REFERENCES Parts, ctdprefix TEXT PRIMARY KEY'),
         ]
 
 

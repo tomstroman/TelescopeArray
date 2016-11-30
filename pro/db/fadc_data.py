@@ -248,18 +248,25 @@ def find_new_runnights(db=default_dbfile):
     db_downloads = retrieve('SELECT path, site FROM Downloads')
 
     paths_to_logs = _get_paths_to_logs(db_downloads)
-    print 'Unique sitelogs: ', len(paths_to_logs.keys())
+    print 'Unique sitelogs:', len(paths_to_logs.keys())
 
     for sitelog, logs in sorted(paths_to_logs.items()):
         if sitelog in db_sitelogs:
             continue
-
-        logs, maxcount = _filter_incomplete_logs(logs)
+        try:
+            logs, maxcount = _filter_incomplete_logs(logs)
+        except:
+            print 'Error filtering', sitelog
+            continue
 
         # order the logs by date of download, found in the path after 'tafd'
         chron_logs = sorted(logs, key=lambda x: x.split('tafd')[1])
 
-        ctd, log, ymd = _find_ctd_and_log(chron_logs, skip=not bool(maxcount))
+        try:
+            ctd, log, ymd = _find_ctd_and_log(chron_logs, skip=not bool(maxcount))
+        except:
+            print 'Error finding CTD:', chron_logs[0]
+
         if ctd is not None:
             download = ctd.split('ctd/')[0]
         elif maxcount==0:
@@ -273,13 +280,72 @@ def find_new_runnights(db=default_dbfile):
         runnight = (int(ymd), site, download, log)
         insert_row('INSERT INTO Runnights VALUES(?, ?, ?, ?)', runnight)
 
+def _get_parts_by_runnight(db_parts):
+    parts_by_runnight = {}
+    for date, part, site in db_parts:
+        k = (date, site)
+        try:
+            parts_by_runnight[k].append(part)
+        except KeyError:
+            parts_by_runnight[k] = [part]
 
+    return parts_by_runnight
 
+def _get_parts_from_log(logfile, date, site):
+    parts = []
+    partlines = re.findall('.*\|.*\|.*\|.*\|', open(logfile, 'r').read())
+    for line in partlines:
+        part_id, cameras, sigma, triggers =  [l.strip() for l in line.split('|')][:-1]
+        try:
+            part = int(part_id[-2:])
+            daqcams = sum([2**c for c in map(int, cameras.split())]) # represent 12 cameras as 12 bits
+            daqsigma = float(sigma)
+            daqtrig = int(triggers)
+        except ValueError:
+            print 'Error in {} parsing line {}'.format(logfile, line)
+            continue
+        part11 = 1000*date + 10*part + site
+        dbpart = (part11, date, part, site, daqtrig, daqcams, daqsigma)
+        if dbpart in parts:
+            print 'Warning - skipping repeat  occurrences of', dbpart
+            continue
+        parts.append(dbpart)
+    return parts
 
-    
+def find_new_parts(db=default_dbfile):
+    db_parts = retrieve('SELECT date, part, site FROM Parts')
+    print 'Parts already in database:', len(db_parts)
+    db_parts_by_runnight = _get_parts_by_runnight(db_parts)
 
+    db_runnights = retrieve('SELECT date, site, logfile FROM Runnights')
+    for date, site, logfile in db_runnights:
+        if (date, site) in db_parts_by_runnight.keys():
+            continue
+        print logfile
+        try:
+            logparts = tuple(_get_parts_from_log(logfile, date, site))
+        except:
+            print 'Error finding parts in', logfile
+            continue
+        insert_rows('INSERT INTO Parts VALUES(?, ?, ?, ?, ?, ?, ?)', logparts)
 
+def find_filesets(db=default_dbfile):
+    db_filesets = retrieve('SELECT part11 FROM Filesets')
+    print 'Filesets already in database:', len(db_filesets)
 
-        
-    
+    db_parts = retrieve('SELECT p.part11, r.download FROM Parts AS p JOIN Runnights AS r ON p.date=r.date AND p.site=r.site WHERE p.daqsigma=6.0 ORDER BY p.part11')
+    for part11, download in db_parts:
+        if (part11,) in db_filesets:
+            continue
+
+        ctdpath = os.path.join(download, 'ctd/event-data/')
+        daqname = 'DAQ-*{}-{}-???????.d.bz2'.format(str(part11)[4:10], part11 % 10)
+        ctd_daqs = glob(os.path.join(ctdpath, daqname))
+        if not ctd_daqs:
+            print 'No files found for', part11
+            continue
+        ctdprefix = ctd_daqs[0][:-16]
+        fileset = (part11, ctdprefix)
+        print fileset
+        insert_row('INSERT INTO Filesets VALUES(?, ?)', fileset)
 
