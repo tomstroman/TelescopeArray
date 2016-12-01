@@ -9,35 +9,18 @@ import re
 from glob import glob
 default_dbfile = 'fadc_data.db'
 
-def report(db=default_dbfile):
-    """
-    Print a list of tables in the database, with the number of rows in each.
-    """
-    import json
-    with sqlite3.connect(db) as con:
-        cur = con.cursor()
+from db import DatabaseWrapper
 
-        cur.execute('SELECT name FROM sqlite_master WHERE type="table"')
-        dbtables = [table[0] for table in cur.fetchall()]
+db = DatabaseWrapper(default_dbfile)
 
-        counts = {}
-        for table in dbtables:
-            cur.execute('SELECT count() FROM {0}'.format(table))
-            counts[table] = cur.fetchall()[0][0]
-
-    print json.dumps(counts, sort_keys=True, indent=2)
-
-
-
-
-def init(db=default_dbfile):
+def init(dbfile=db.db):
     """
     Create the database tables from scratch (overwriting any existing ones),
     and initialize with static data where appropriate.
     """
     from tables import fadc_tables
     import static_data
-    with sqlite3.connect(db) as con:
+    with sqlite3.connect(dbfile) as con:
         cur = con.cursor()
 
         for table, structure in fadc_tables:
@@ -46,53 +29,13 @@ def init(db=default_dbfile):
 
         cur.executemany('INSERT INTO Sites VALUES(?, ?, ?, ?)', static_data.sites)
         
-def retrieve(sql, db=default_dbfile):
-    """
-    Execute arbitrary SQL on the specified database, provided the SQL begins
-    with 'SELECT ', then return the selected rows.
-    """
-    assert sql.upper().startswith('SELECT ')
 
-    with sqlite3.connect(db) as con:
-        cur = con.cursor()
-
-        cur.execute(sql)
-        rows = cur.fetchall()
-    return rows
-
-def insert_row(sql, values, db=default_dbfile):
-    """
-    Execute arbitrary SQL on the specified database, provided the SQL begins
-    with 'INSERT INTO '. A tuple is expected for values.
-    """
-    assert isinstance(values, tuple)
-    assert sql.count('?') == len(values)
-    assert sql.upper().startswith('INSERT INTO ')
-    with sqlite3.connect(db) as con:
-        cur = con.cursor()
-        cur.execute('PRAGMA foreign_keys = 1')
-        cur.execute(sql, values)
-
-def insert_rows(sql, all_values, db=default_dbfile):
-    """
-    Execute arbitrary SQL on the specified database, provided the SQL begins
-    with 'INSERT INTO '. A tuple of tuples is expected for all_values.
-    """
-    assert isinstance(all_values, tuple)
-    assert sql.upper().startswith('INSERT INTO ')
-    num_v = sql.count('?')
-    assert all(isinstance(values, tuple) and len(values) == num_v for values in all_values)
-    with sqlite3.connect(db) as con:
-        cur = con.cursor()
-        cur.execute('PRAGMA foreign_keys = 1')
-        cur.executemany(sql, all_values)
-
-def find_new_downloads(db=default_dbfile):
+def find_new_downloads():
     """
     Locate all paths matching /tadserv*/tafd/*/*/ctd/ and add to the database.
     Return the number of new paths found.
     """
-    db_downloads = retrieve('SELECT path, site FROM Downloads', db)
+    db_downloads = db.retrieve('SELECT path, site FROM Downloads')
     print 'Downloads already in database:', len(db_downloads)
     tafd_list = sorted(glob('/tadserv*/tafd/'))
     new_downloads = []
@@ -112,7 +55,7 @@ def find_new_downloads(db=default_dbfile):
     num_new = len(new_downloads)
     if num_new:
         print 'New downloads found in this scan:', num_new    
-        insert_rows('INSERT INTO Downloads VALUES(?, ?)', tuple(new_downloads))
+        db.insert_rows('INSERT INTO Downloads VALUES(?, ?)', tuple(new_downloads))
 
     return num_new
 
@@ -243,15 +186,15 @@ def _find_ctd_and_log(chron_logs, skip=False):
         print 'All possibly matching files found in single location; inferring', ctd
         return ctd, chron_logs[0], ymd
 
-def find_new_runnights(db=default_dbfile):
+def find_new_runnights():
     """
     Populate the Runnights table from logs in known downloads. Insert one row at a time
     to tolerate interruptions.
     """
-    db_runnights = retrieve('SELECT site, logfile FROM Runnights')
+    db_runnights = db.retrieve('SELECT site, logfile FROM Runnights')
     print 'Logfiles already in database:', len(db_runnights)
     db_sitelogs = ['{}:{}'.format(site, os.path.basename(logfile)) for site, logfile in db_runnights]
-    db_downloads = retrieve('SELECT path, site FROM Downloads')
+    db_downloads = db.retrieve('SELECT path, site FROM Downloads')
 
     paths_to_logs = _get_paths_to_logs(db_downloads)
     print 'Unique sitelogs:', len(paths_to_logs.keys())
@@ -284,7 +227,7 @@ def find_new_runnights(db=default_dbfile):
 
         site = int(sitelog[0])
         runnight = (int(ymd), site, download, log)
-        insert_row('INSERT INTO Runnights VALUES(?, ?, ?, ?)', runnight)
+        db.insert_row('INSERT INTO Runnights VALUES(?, ?, ?, ?)', runnight)
 
 def _get_parts_by_runnight(db_parts):
     parts_by_runnight = {}
@@ -318,12 +261,12 @@ def _get_parts_from_log(logfile, date, site):
         parts.append(dbpart)
     return parts
 
-def find_new_parts(db=default_dbfile):
-    db_parts = retrieve('SELECT date, part, site FROM Parts')
+def find_new_parts():
+    db_parts = db.retrieve('SELECT date, part, site FROM Parts')
     print 'Parts already in database:', len(db_parts)
     db_parts_by_runnight = _get_parts_by_runnight(db_parts)
 
-    db_runnights = retrieve('SELECT date, site, logfile FROM Runnights')
+    db_runnights = db.retrieve('SELECT date, site, logfile FROM Runnights')
     for date, site, logfile in db_runnights:
         if (date, site) in db_parts_by_runnight.keys():
             continue
@@ -333,13 +276,13 @@ def find_new_parts(db=default_dbfile):
         except:
             print 'Error finding parts in', logfile
             continue
-        insert_rows('INSERT INTO Parts VALUES(?, ?, ?, ?, ?, ?, ?)', logparts)
+        db.insert_rows('INSERT INTO Parts VALUES(?, ?, ?, ?, ?, ?, ?)', logparts)
 
-def find_filesets(db=default_dbfile):
-    db_filesets = retrieve('SELECT part11 FROM Filesets')
+def find_filesets():
+    db_filesets = db.retrieve('SELECT part11 FROM Filesets')
     print 'Filesets already in database:', len(db_filesets)
 
-    db_parts = retrieve('SELECT p.part11, r.download FROM Parts AS p JOIN Runnights AS r ON p.date=r.date AND p.site=r.site WHERE p.daqsigma=6.0 ORDER BY p.part11')
+    db_parts = db.retrieve('SELECT p.part11, r.download FROM Parts AS p JOIN Runnights AS r ON p.date=r.date AND p.site=r.site WHERE p.daqsigma=6.0 ORDER BY p.part11')
     for part11, download in db_parts:
         if (part11,) in db_filesets:
             continue
@@ -353,5 +296,5 @@ def find_filesets(db=default_dbfile):
         ctdprefix = ctd_daqs[0][:-16]
         fileset = (part11, ctdprefix)
         print fileset
-        insert_row('INSERT INTO Filesets VALUES(?, ?)', fileset)
+        db.insert_row('INSERT INTO Filesets VALUES(?, ?)', fileset)
 
