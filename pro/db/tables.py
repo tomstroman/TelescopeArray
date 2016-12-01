@@ -14,7 +14,9 @@ fadc_tables = [
         ('Filesets', 'part11 INTEGER REFERENCES Parts, ctdprefix TEXT PRIMARY KEY'),
         ]
 
-
+fadc_process_tables = [
+        ('Parts', 'part INTEGER PRIMARY KEY, daqcams INTEGER NOT NULL, daqtrig INTEGER NOT NULL, ctdtrig INTEGER DEFAULT NULL, badcount INTEGER DEFAULT NULL, dsttrig INTEGER DEFAULT NULL, dstseconds REAL DEFAULT NULL, bytes INTEGER DEFAULT NULL, jstart REAL DEFAULT NULL, pedminutes INTEGER DEFAULT NULL, downcount INTEGER DEFAULT NULL, badcalcount INTEGER DEFAULT NULL'),
+        ]
 
 
 

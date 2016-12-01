@@ -1,7 +1,6 @@
 # fadc_data.py
 # Thomas Stroman, University of Utah, 2016-11-28
-# Storage of information for Telescope Array FADC data processing
-
+# Storage of information for Telescope Array FADC raw-data organization
 
 import sqlite3
 import os
@@ -9,7 +8,7 @@ import re
 from glob import glob
 default_dbfile = 'fadc_data.db'
 
-from db import DatabaseWrapper
+from database_wrapper import DatabaseWrapper
 
 db = DatabaseWrapper(default_dbfile)
 
