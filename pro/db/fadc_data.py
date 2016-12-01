@@ -206,13 +206,19 @@ def _find_ctd_and_log(chron_logs, skip=False):
             print ctd, log
             return ctd, log, ymd            
     else:
+# THIS LINE IS FOR DEBUGGING/TEMPORARY
+        return None, chron_logs[0], ymd
+# END TEMPORARY
         print 'No CTD found for {} in {} location(s) searched. Comprehensive search now...'.format(logfile, len(chron_logs))
         site = log.split('station')[1][0]
 
         normal_ctd = '/tadserv*/tafd/*/*/ctd/event-data/DAQ-{}??-{}-*.d.bz2'.format(ymd[2:], site)
-        alt_ctd = '/tadserv*/tafd/*/*/ctd/event-data/DAQ-0{}??-{}-*.d.bz2'.format(ymd[4:], site)
 
-        ctds = glob(normal_ctd) + glob(alt_ctd)
+        if ymd.startswith('2007'): # special case before current standard was implemented
+            alt_ctd = '/tadserv*/tafd/*/*/ctd/event-data/DAQ-0{}??-{}-*.d.bz2'.format(ymd[4:], site)
+            ctds = glob(normal_ctd) + glob(alt_ctd)
+        else:
+            ctds = glob(normal_ctd)
         
         if len(ctds) == 0:
             print 'Still no files found! Giving up.'
