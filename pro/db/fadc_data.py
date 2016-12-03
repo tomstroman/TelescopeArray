@@ -149,7 +149,8 @@ def _find_ctd_and_log(chron_logs, skip=False):
             return ctd, log, ymd            
     else:
 # THIS LINE IS FOR DEBUGGING/TEMPORARY
-        return None, chron_logs[0], ymd
+        if int(ymd) > 20080200:
+            return None, chron_logs[0], ymd
 # END TEMPORARY
         print 'No CTD found for {} in {} location(s) searched. Comprehensive search now...'.format(logfile, len(chron_logs))
         site = log.split('station')[1][0]

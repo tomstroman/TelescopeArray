@@ -42,32 +42,59 @@ class DatabaseWrapper(object):
             rows = cur.fetchall()
         return rows
 
-    def insert_row(self, sql, values):
-        """
-        Execute arbitrary SQL on the specified database, provided the SQL begins
-        with 'INSERT INTO '. A tuple is expected for values.
-        """
-        assert isinstance(values, tuple)
+    def _execute(self, sql, values):
         assert sql.count('?') == len(values)
-        assert sql.upper().startswith('INSERT INTO ')
+        assert isinstance(values, tuple)
         with sqlite3.connect(self.db) as con:
             cur = con.cursor()
             cur.execute('PRAGMA foreign_keys = 1')
             cur.execute(sql, values)
 
-    def insert_rows(self, sql, all_values):
-        """
-        Execute arbitrary SQL on the specified database, provided the SQL begins
-        with 'INSERT INTO '. A tuple of tuples is expected for all_values.
-        """
+    def _executemany(self, sql, all_values):
         assert isinstance(all_values, tuple)
-        assert sql.upper().startswith('INSERT INTO ')
         num_v = sql.count('?')
         assert all(isinstance(values, tuple) and len(values) == num_v for values in all_values)
         with sqlite3.connect(self.db) as con:
             cur = con.cursor()
             cur.execute('PRAGMA foreign_keys = 1')
             cur.executemany(sql, all_values)
+
+
+
+    def insert_row(self, sql, values):
+        """
+        Execute arbitrary SQL on the specified database, provided the SQL begins
+        with 'INSERT INTO '. A tuple is expected for values.
+        """
+        assert sql.upper().startswith('INSERT INTO ')
+        self._execute(sql, values)
+
+    def insert_rows(self, sql, all_values):
+        """
+        Execute arbitrary SQL on the specified database, provided the SQL begins
+        with 'INSERT INTO '. A tuple of tuples is expected for all_values.
+        """
+        assert sql.upper().startswith('INSERT INTO ')
+        self._executemany(sql, all_values)
+
+    def update_row(self, sql, values):
+        """
+        Execute arbitrary SQL on the specified database, provided the SQL begins
+        with 'UPDATE ' and contains ' WHERE '. A tuple is expected for values.
+        """
+        assert sql.upper().startswith('UPDATE ')
+        assert ' WHERE ' in sql.upper()
+        self._execute(sql, values)
+
+    def update_rows(self, sql, all_values):
+        """
+        Execute arbitrary SQL on the specified database, provided the SQL begins
+        with 'UPDATE ' and contains ' WHERE '. A tuple of tuples is expected for all_values.
+        """
+        assert sql.upper().startswith('UPDATE ')
+        assert ' WHERE ' in sql.upper()
+        self._executemany(sql, all_values)
+
     
     def __repr__(self):
         return 'DatabaseWrapper for {}'.format(self.db)
