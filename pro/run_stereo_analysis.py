@@ -5,6 +5,7 @@
 
 from db.database_wrapper import DatabaseWrapper
 import os
+from process_night import process_night
 
 def run(dbfile='db/tafd_analysis.db'):
     analysis_db = DatabaseWrapper(dbfile)
@@ -22,7 +23,31 @@ def run(dbfile='db/tafd_analysis.db'):
         print 'Error: could not read', dates_file
         return None
 
+    date_status = {date: 'unstarted' for date in dates}
 
+    for date in dates:
+        try:
+            date_status[date] = process_night(date)
+        except Exception:
+            date_status[date] = 'exception'
+
+    return date_status
+
+
+def report(date_status):
+    print 'Result of analysis on {} nights:'.format(len(date_status))
+    aggregate = {}
+    for status in date_status.values():
+        try:
+            aggregate[status] += 1
+        except KeyError:
+            aggregate[status] = 1
+    for status, count in aggregate.items():
+        print "Status '{}': {} night(s)".format(status, count)
+
+if __name__ == '__main__':
+    date_status = run()
+    report(date_status)
 
 
 
