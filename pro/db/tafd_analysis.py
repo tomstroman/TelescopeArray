@@ -6,7 +6,12 @@
 import sqlite3
 import json
 
+from fadc_data import retrieve
 default_dbfile='tafd_analysis.db'
+
+from database_wrapper import DatabaseWrapper
+
+db = DatabaseWrapper(default_dbfile)
 
 default_properties=(('ROOTPATH', '/scratch/tstroman/stereo/'),                    
                     ('ANALYSIS', 'gdas_j14t'),
@@ -15,21 +20,17 @@ default_properties=(('ROOTPATH', '/scratch/tstroman/stereo/'),
                     )
 
 
-def report(db=default_dbfile):
+def report(db=db):
     """
     Print a list of the information in the Properties table.
     """
-    with sqlite3.connect(db) as con:
-        cur = con.cursor()
-
-        cur.execute('SELECT name, value FROM Properties')
-        properties = {name: value for name, value in cur.fetchall()}
+    properties = {name: value for name, value in db.retrieve('SELECT name, value FROM Properties')}
 
     print json.dumps(properties, sort_keys=True, indent=2)
 
 
-def init(db=default_dbfile, properties=default_properties):
-    with sqlite3.connect(db) as con:
+def init(dbfile=db.db, properties=default_properties):
+    with sqlite3.connect(dbfile) as con:
         cur = con.cursor()
         cur.execute('DROP TABLE IF EXISTS Properties')
         cur.execute('CREATE TABLE Properties(name TEXT PRIMARY KEY, value TEXT)') 
