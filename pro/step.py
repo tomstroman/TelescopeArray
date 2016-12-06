@@ -26,15 +26,30 @@ def foo(*args, **kwargs):
     """
     pass
 
-steps = [Step('run_timecorr', foo),
-         Step('run_tama', foo),
-         Step('run_fdplane', foo),
-         Step('get_mdps3', foo),
-         Step('find_matches', foo),
-         Step('remove_clf', foo),
-         Step('isolate_events', foo),
-         Step('run_stplane', foo),
-         Step('perform_sanity_check', foo),
-         Step('reconstruct_profiles', foo),
-         Step('dump_ascii', foo),
-         ]
+    
+    
+data_steps = [Step('run_timecorr', foo),
+              Step('run_tama', foo),
+              Step('run_fdped', foo),
+              Step('run_fdplane', foo),
+              Step('get_mdps3', foo),
+              ]
+    
+mc_steps = [Step('verify_data', foo),
+            Step('prep_trump_sim', foo),
+            Step('run_trump_sim', foo),
+            Step('prep_md_sim', foo),
+            Step('run_md_sim', foo),
+            ]
+            
+analysis_steps = [Step('verify_source', foo),
+                  Step('find_matches', foo),
+                  Step('remove_clf', foo),
+                  Step('isolate_events', foo),
+                  Step('run_stplane', foo),
+                  Step('perform_sanity_check', foo),
+                  Step('reconstruct_profiles', foo),
+                  Step('dump_ascii', foo),
+                  ]
+
+steps = data_steps + mc_steps + analysis_steps
