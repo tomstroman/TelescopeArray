@@ -16,12 +16,22 @@ def process_night(night, start_code=None, end_code=None):
     checkpoint for the night.
     """
 
+    if start_code is None:
+        start_code = steps[0].id
+    if end_code is None:
+        end_code = steps[-1].id
+
+    print 'Processing {} from {} through {}'.format(night, steps[start_code], steps[end_code])
+
     for step in steps:
         if not start_code <= step.id <= end_code:
             continue
 
-        print step
-        pass
+        result = step.ex()
+        if result is not None:
+            return result
+
+    return 'end reached'
 
 if __name__ == '__main__':
     process_night(0)
