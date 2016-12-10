@@ -30,7 +30,10 @@ def import_new_raw_parts():
 
     db.insert_rows('INSERT INTO Parts (part, daqcams, daqtrig) VALUES (?, ?, ?)', tuple(new_parts))
 
-tama = {str(siteid): '/tama_{}/{}/'.format(siteid, name) for siteid, name in rawdb.retrieve('SELECT id, name FROM Sites WHERE id<2')}
+#tama = {str(siteid): '/tama_{}/{}/'.format(siteid, name) for siteid, name in rawdb.retrieve('SELECT id, name FROM Sites WHERE id<2')}
+
+# hard-coding to avoid issues with database path when importing
+tama = {'0': '/tama_0/black-rock/', '1': '/tama_1/long-ridge/'}
 
 def _ymdps(part):
     x = str(part)
