@@ -23,6 +23,7 @@ def run(dbfile='db/tafd_analysis.db'):
         print 'Error: could not read', dates_file
         return None
 
+    dates=dates[-3:]
     date_status = {date: 'unstarted' for date in dates}
 
     for date in dates:

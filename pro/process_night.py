@@ -27,7 +27,7 @@ def process_night(night, start_code=None, end_code=None):
         if not start_code <= step.id <= end_code:
             continue
 
-        result = step.ex()
+        result = step.ex(night)
         if result is not None:
             return result
 

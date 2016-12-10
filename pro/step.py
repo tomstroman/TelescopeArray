@@ -14,7 +14,7 @@ class Step(object):
         try:
             return self.function(*args, **kwargs)
         except TypeError:
-            print 'Error: no callable function for', self
+            print 'Error: invalid call for', self
 
     def __repr__(self):
         return 'Step {0}: {1} (calls function {2})'.format(self.id, self.name,
@@ -26,9 +26,9 @@ def foo(*args, **kwargs):
     """
     pass
 
+from prep_fadc import raw_to_dst
     
-    
-data_steps = [Step('run_timecorr', foo),
+data_steps = [Step('run_timecorr', raw_to_dst.run_timecorr),
               Step('run_tama', foo),
               Step('run_fdped', foo),
               Step('run_fdplane', foo),
