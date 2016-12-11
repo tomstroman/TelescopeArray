@@ -148,7 +148,7 @@ def _sync_to_tama(source):
 
 from db.database_wrapper import DatabaseWrapper
 
-def run_timecorr(night):
+def run_timecorr(night, _params):
     db = DatabaseWrapper('db/fadc_data.db')
     parts = db.retrieve('SELECT p.part11, f.ctdprefix FROM Parts AS p JOIN Filesets AS f ON p.part11=f.part11 WHERE p.date={}'.format(night))
     print 'FADC parts for {}: {}'.format(night, len(parts))

@@ -4,10 +4,14 @@
 
 class Step(object):
     counter = 0
+    names = {}
+    
     def __init__(self, name, function):
+        assert name not in Step.names.keys()
         self.name = name
         self.function = function
         self.id = Step.counter
+        Step.names[name] = self.id
         Step.counter += 1
 
     def ex(self, *args, **kwargs):
@@ -27,6 +31,7 @@ def foo(*args, **kwargs):
     pass
 
 from prep_fadc import raw_to_dst
+from legacy_stereo import simulation
     
 data_steps = [Step('run_timecorr', raw_to_dst.run_timecorr),
               Step('run_tama', foo),
@@ -35,7 +40,7 @@ data_steps = [Step('run_timecorr', raw_to_dst.run_timecorr),
               Step('get_mdps3', foo),
               ]
     
-mc_steps = [Step('verify_data', foo),
+mc_steps = [Step('verify_data', simulation.verify_data),
             Step('prep_trump_sim', foo),
             Step('run_trump_sim', foo),
             Step('prep_md_sim', foo),

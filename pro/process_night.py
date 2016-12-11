@@ -4,10 +4,10 @@
 # Thomas Stroman, University of Utah, 2016-11-27
 # Supervise the stereo processing of a single night from start to finish.
 
-from step import steps
+from step import Step, steps
 
 
-def process_night(night, start_code=None, end_code=None):
+def process_night(night, params=None, start_code=None, end_code=None):
     """
     Arguments:
     night is an 8-digit integer giving a UTC date in YYYYMMDD format.
@@ -16,6 +16,12 @@ def process_night(night, start_code=None, end_code=None):
     checkpoint for the night.
     """
 
+    if isinstance(start_code, str):
+        start_code = Step.names[start_code]
+
+    if isinstance(end_code, str):
+        end_code = Step.names[end_code]
+        
     if start_code is None:
         start_code = steps[0].id
     if end_code is None:
@@ -27,7 +33,7 @@ def process_night(night, start_code=None, end_code=None):
         if not start_code <= step.id <= end_code:
             continue
 
-        result = step.ex(night)
+        result = step.ex(night, params)
         if result is not None:
             return result
 

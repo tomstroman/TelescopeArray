@@ -6,6 +6,13 @@
 from db.database_wrapper import DatabaseWrapper
 import os
 from process_night import process_night
+from step import steps
+
+
+# hard-code these here, for now:
+model = 'qgsjetii-03'
+source = 'nature'
+
 
 def run(dbfile='db/tafd_analysis.db'):
     analysis_db = DatabaseWrapper(dbfile)
@@ -23,17 +30,39 @@ def run(dbfile='db/tafd_analysis.db'):
         print 'Error: could not read', dates_file
         return None
 
+    # this part is going to be a bit of a kludge for now --
+    # eventually generate the needed paths and templates, but
+    # today we just fail loudly if they haven't been created
+    
+    modelpath = os.path.join(rootpath, properties['ANALYSIS'], model)
+            
+    analysispath = os.path.join(modelpath, source)
+    print 'checking for', analysispath
+    assert os.path.isdir(analysispath)
+
+    binpath = os.path.join(modelpath, 'bin')
+    assert os.path.isdir(binpath)
+    
+    is_mc = source.startswith('mc')
+    if is_mc:
+        trump_template = os.path.join(analysispath, 'yYYYYmMMdDD.fd.conf')
+        assert os.path.exists(trump_template)
+
+        
     dates=dates[-3:]
     date_status = {date: 'unstarted' for date in dates}
+    
+    params = {'model': model, 'source': source, 'is_mc': is_mc, 'path': analysispath}
 
     for date in dates:
         try:
-            date_status[date] = process_night(date)
+            date_status[date] = process_night(date, params, start_code='prep_trump_sim')
         except Exception:
             date_status[date] = 'exception'
 
     return date_status
 
+    
 
 def report(date_status):
     print 'Result of analysis on {} nights:'.format(len(date_status))
