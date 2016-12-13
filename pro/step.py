@@ -41,8 +41,8 @@ data_steps = [Step('run_timecorr', raw_to_dst.run_timecorr),
               ]
     
 mc_steps = [Step('verify_data', simulation.verify_data),
-            Step('prep_trump_sim', foo),
-            Step('run_trump_sim', foo),
+            Step('prep_trump_sim', simulation.prep_trump_sim),
+            Step('run_trump_sim', simulation.run_trump_sim),
             Step('prep_md_sim', foo),
             Step('run_md_sim', foo),
             ]

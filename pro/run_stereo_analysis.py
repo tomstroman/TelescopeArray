@@ -7,12 +7,32 @@ from db.database_wrapper import DatabaseWrapper
 import os
 from process_night import process_night
 from step import steps
-
+from prep_fadc.raw_to_dst import _command
+from datetime import datetime
+import subprocess
 
 # hard-code these here, for now:
 model = 'qgsjetii-03'
-source = 'nature'
+source = 'mc-proton0'
 
+mosq_poll_interval = 15 # seconds
+def _get_mosix_jobs():
+    """
+    Obtain a list of queued/running mosix jobs and return a dict with
+    job IDs as keys, and lists of (process name, status) as values.
+    """
+    mosq = subprocess.check_output('mosq -j listall'.split())
+    jobs = {}
+    for line in mosq.strip().split('\n')[1:]:
+        l = line.split()
+        pid, pri, jobid = [l[i] for i in [0, 4, 5]]
+        jobid = int(jobid)
+        try:
+            jobs[jobid].append((pid, pri))
+        except KeyError:
+            jobs[jobid] = [(pid, pri)]
+
+    return jobs
 
 def run(dbfile='db/tafd_analysis.db'):
     analysis_db = DatabaseWrapper(dbfile)
@@ -44,17 +64,29 @@ def run(dbfile='db/tafd_analysis.db'):
     assert os.path.isdir(binpath)
     
     is_mc = source.startswith('mc')
+    trump_template = None
     if is_mc:
         trump_template = os.path.join(analysispath, 'yYYYYmMMdDD.fd.conf')
         assert os.path.exists(trump_template)
+        assert os.path.exists(os.path.join(analysispath, 'logs'))
 
-        
-    dates=dates[-3:]
+    #dates = dates[-3:]
+    #dates = dates[:30]
     date_status = {date: 'unstarted' for date in dates}
     
-    params = {'model': model, 'source': source, 'is_mc': is_mc, 'path': analysispath}
+    mosq = _get_mosix_jobs()
+    mosq_age = datetime.utcnow()
+
+    params = {'model': model, 'source': source, 'is_mc': trump_template, 'path': analysispath, 'mosq': mosq}
 
     for date in dates:
+        now = datetime.utcnow()
+        if (now - mosq_age).total_seconds() > mosq_poll_interval:
+            print 'Updating mosq list'
+            mosq = _get_mosix_jobs()
+            mosq_age = now
+            params['mosq'] = mosq
+
         try:
             date_status[date] = process_night(date, params, start_code='prep_trump_sim')
         except Exception:
@@ -62,18 +94,22 @@ def run(dbfile='db/tafd_analysis.db'):
 
     return date_status
 
-    
-
 def report(date_status):
     print 'Result of analysis on {} nights:'.format(len(date_status))
     aggregate = {}
-    for status in date_status.values():
+    exceptions = []
+    for date, status in date_status.items():
+        if status == 'exception':
+            exceptions.append(date)
         try:
             aggregate[status] += 1
         except KeyError:
             aggregate[status] = 1
     for status, count in aggregate.items():
         print "Status '{}': {} night(s)".format(status, count)
+    if exceptions:
+        print 'List of dates generating exceptions:'
+        print exceptions
 
 if __name__ == '__main__':
     date_status = run()
