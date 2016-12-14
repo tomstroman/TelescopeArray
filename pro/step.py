@@ -45,6 +45,7 @@ mc_steps = [Step('verify_data', simulation.verify_data),
             Step('run_trump_sim', simulation.run_trump_sim),
             Step('prep_md_sim', foo),
             Step('run_md_sim', foo),
+            Step('verify_sim', simulation.verify_sim),
             ]
             
 analysis_steps = [Step('verify_source', foo),
