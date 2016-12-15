@@ -4,6 +4,9 @@
 
 import os
 from glob import glob
+
+from utils import _command, _ymdps, _timecorr_path
+
 site_names = {'0': 'black-rock', '1': 'long-ridge'}
 site_ids = {v: k for k, v in site_names.items()}
 import subprocess
@@ -15,14 +18,6 @@ dstlist = os.path.join(os.getenv('TADSTBIN'), 'dstlist.run')
 scratch = '/scratch/tstroman/prep_fadc'
 if not os.path.exists(scratch):
     os.system('mkdir -p ' + scratch)
-
-def _command(cmd):
-    """
-    Given a command as though typed in the shell, execute that command and return (stdout, stderr)
-    """
-    p = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    p.wait()
-    return p.communicate()
 
 def _get_tama_mounts():
     """
@@ -42,8 +37,6 @@ def _get_tama_mounts():
     return tama_mounts
     
 tama_mounts =  _get_tama_mounts()
-    
-from db.fadc_process import _timecorr_path, _ymdps
 
 def _verify_timecorr_exists(part_code):
     """
