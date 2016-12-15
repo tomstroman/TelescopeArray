@@ -13,7 +13,11 @@ import subprocess
 
 # hard-code these here, for now:
 model = 'qgsjetii-03'
-source = 'mc-proton0'
+source = 'mc-proton'
+
+
+ignorable_night_reasons = ['no TRUMP conf found']
+
 
 mosq_poll_interval = 15 # seconds
 def _get_mosix_jobs():
@@ -40,6 +44,8 @@ def run(dbfile='db/tafd_analysis.db'):
     properties = {name: value for name, value in analysis_db.retrieve("SELECT name, value FROM Properties")}
     print properties
     
+    ignore_nights = {d: 'ignored: '+r for d,r in analysis_db.retrieve("SELECT date, reason FROM StereoIgnoreNights")}
+
     rootpath = properties['ROOTPATH']
     dates_file = os.path.join(rootpath, 'list-of-dates')
     try:
@@ -50,6 +56,7 @@ def run(dbfile='db/tafd_analysis.db'):
         print 'Error: could not read', dates_file
         return None
 
+    dates = list(set(dates) - set(ignore_nights.keys()))
     # this part is going to be a bit of a kludge for now --
     # eventually generate the needed paths and templates, but
     # today we just fail loudly if they haven't been created
@@ -73,7 +80,8 @@ def run(dbfile='db/tafd_analysis.db'):
     #dates = dates[-3:]
     #dates = dates[:30]
     date_status = {date: 'unstarted' for date in dates}
-    
+    date_status.update(ignore_nights)
+
     mosq = _get_mosix_jobs()
     mosq_age = datetime.utcnow()
 
@@ -89,8 +97,13 @@ def run(dbfile='db/tafd_analysis.db'):
 
         try:
             date_status[date] = process_night(date, params, start_code='prep_trump_sim')
-        except Exception:
+        except Exception as e:
             date_status[date] = 'exception'
+            print e
+
+        if date_status[date] in ignorable_night_reasons:
+            print 'This date will be ignored in future runs.'
+            analysis_db.insert_row('INSERT INTO StereoIgnoreNights VALUES(?, ?)', (date, date_status[date]))
 
     return date_status
 
