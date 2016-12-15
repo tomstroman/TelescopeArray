@@ -6,7 +6,7 @@
 import sqlite3
 import json
 
-from fadc_data import retrieve
+#from fadc_data import retrieve
 default_dbfile='tafd_analysis.db'
 
 from database_wrapper import DatabaseWrapper
@@ -36,6 +36,9 @@ def init(dbfile=db.db, properties=default_properties):
         cur.execute('CREATE TABLE Properties(name TEXT PRIMARY KEY, value TEXT)') 
     
         cur.executemany('INSERT INTO Properties VALUES(?, ?)', properties)
+
+        cur.execute('DROP TABLE IF EXISTS StereoIgnoreNights')
+        cur.execute('CREATE TABLE StereoIgnoreNights(date INTEGER PRIMARY KEY, reason TEXT)')
     
     
 if __name__ == '__main__':
