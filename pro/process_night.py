@@ -16,7 +16,7 @@ def process_night(night, params, start_code=None, end_code=None):
     step if it is possible. Otherwise it will begin at the last known
     checkpoint for the night.
     """
-
+    print night
     if night in params['mosq']:
         return 'found in queue'
 
@@ -33,7 +33,7 @@ def process_night(night, params, start_code=None, end_code=None):
 
     #print 'Processing {} from {} through {}'.format(night, steps[start_code], steps[end_code])
 
-    print night
+
     for step in steps:
         if not start_code <= step.id <= end_code:
             continue

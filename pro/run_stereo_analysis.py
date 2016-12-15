@@ -56,7 +56,7 @@ def run(dbfile='db/tafd_analysis.db'):
         print 'Error: could not read', dates_file
         return None
 
-    dates = list(set(dates) - set(ignore_nights.keys()))
+    dates = sorted(list(set(dates) - set(ignore_nights.keys())))
     # this part is going to be a bit of a kludge for now --
     # eventually generate the needed paths and templates, but
     # today we just fail loudly if they haven't been created
@@ -109,24 +109,21 @@ def run(dbfile='db/tafd_analysis.db'):
 
 def report(date_status):
     print 'Result of analysis on {} nights:'.format(len(date_status))
-    aggregate = {}
-    exceptions = []
+    status_dates = {}
     for date, status in date_status.items():
-        if status == 'exception':
-            exceptions.append(date)
         try:
-            aggregate[status] += 1
+            status_dates[status].append(date)
         except KeyError:
-            aggregate[status] = 1
-    for status, count in aggregate.items():
-        print "Status '{}': {} night(s)".format(status, count)
-    if exceptions:
-        print 'List of dates generating exceptions:'
-        print exceptions
+            status_dates[status] = [date]
+    for status, dates in status_dates.items():
+        print "Status '{}': {} night(s)".format(status, len(dates))
+
+    print 'Returning "status_dates" dict for more details.'
+    return status_dates
 
 if __name__ == '__main__':
     date_status = run()
-    report(date_status)
+    status_dates = report(date_status)
 
 
 
