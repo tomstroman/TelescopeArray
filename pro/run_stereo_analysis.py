@@ -105,7 +105,7 @@ def run(dbfile='db/tafd_analysis.db'):
             print 'This date will be ignored in future runs.'
             analysis_db.insert_row('INSERT INTO StereoIgnoreNights VALUES(?, ?)', (date, date_status[date]))
 
-    return date_status
+    return date_status, params
 
 def report(date_status):
     print 'Result of analysis on {} nights:'.format(len(date_status))
@@ -121,8 +121,21 @@ def report(date_status):
     print 'Returning "status_dates" dict for more details.'
     return status_dates
 
+def erase_mosout(nights, params):
+    """
+    Given a list of nights -- e.g., all with a particular status --
+    remove Mosix signature of those nights from the analysis.
+    """
+    if isinstance(nights, int):
+       nights = [nights]
+    path = params['path']
+    for night in nights:
+        mosout = os.path.join(path, 'logs', 'trump-{}.mosout'.format(night))
+        print 'Removing', mosout
+        os.remove(mosout)
+
 if __name__ == '__main__':
-    date_status = run()
+    date_status, params = run()
     status_dates = report(date_status)
 
 
