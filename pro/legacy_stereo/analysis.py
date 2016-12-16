@@ -1,0 +1,55 @@
+# analysis.py
+# Thomas Stroman, University of Utah, 2016-12-15
+# Code to wrap stereo FADC analysis code, existing as Python code I've
+# written previously. This will be deprecated eventually.
+
+import os
+import subprocess
+import re
+
+from utils import _command
+processfd = os.path.join(os.getenv('TAHOME'), 'processFD')
+stereo_exe = os.path.join(processfd, 'stereo.py')
+
+# This is produced every time we read a DST file. Strip it from stderr.
+dst_stderr = ' $$$ dst_get_block_ : End of input file reached\n'
+
+def analyze_and_dump(night, params):
+    analysis = params['path']
+    path = os.path.join(analysis, str(night))
+    stdout = os.path.join(path, 'stereo_log.out.txt')
+    stderr = stdout.replace('out.txt', 'err.txt')
+    cmd = 'python {} {} > {} 2> {}'.format(stereo_exe, path, stdout, stderr)
+    #print cmd
+    #return None
+    #out, err = _command(cmd)
+    a = subprocess.Popen(cmd, shell=True)
+    a.wait()
+    out = open(stdout, 'r').read()
+    err = open(stderr, 'r').read()
+
+    reperr = err.replace(dst_stderr, '')
+
+    if reperr:
+        print 'analyze_and_dump: stderr below'
+        print reperr
+        return 'stderr detected'
+
+    queued = re.findall('Submitted \d+ job\(s\) to queue', out)
+    
+
+    if queued:
+        print 'analyze_and_dump:', queued[0]
+        waitcount = out.count('Too many queued jobs')
+        if waitcount:
+            print 'WARNING: Spent {} seconds in submission cooldown'.format(waitcount*60)
+        return 'Profiles added to queue'
+
+    in_progress_count = out.count('is being produced by PID')
+    if in_progress_count:
+        print 'Waiting for {} profile(s).'.format(in_progress_count)
+        return 'Profiles found in queue'
+    print 'Complete!'
+    return 'analysis complete'
+
+

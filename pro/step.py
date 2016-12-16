@@ -31,7 +31,7 @@ def foo(*args, **kwargs):
     pass
 
 from prep_fadc import raw_to_dst
-from legacy_stereo import simulation
+from legacy_stereo import simulation, analysis
     
 data_steps = [Step('run_timecorr', raw_to_dst.run_timecorr),
               Step('run_tama', foo),
@@ -55,7 +55,7 @@ analysis_steps = [Step('verify_source', foo),
                   Step('run_stplane', foo),
                   Step('perform_sanity_check', foo),
                   Step('reconstruct_profiles', foo),
-                  Step('dump_ascii', foo),
+                  Step('dump_ascii', analysis.analyze_and_dump),
                   ]
 
 steps = data_steps + mc_steps + analysis_steps

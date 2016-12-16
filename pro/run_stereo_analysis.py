@@ -16,7 +16,7 @@ model = 'qgsjetii-03'
 source = 'mc-proton'
 
 
-ignorable_night_reasons = ['no TRUMP conf found']
+ignorable_night_reasons = ['no TRUMP conf found', 'analysis complete']
 
 
 mosq_poll_interval = 15 # seconds
@@ -79,6 +79,7 @@ def run(dbfile='db/tafd_analysis.db'):
 
     #dates = dates[-3:]
     #dates = dates[:30]
+
     date_status = {date: 'unstarted' for date in dates}
     date_status.update(ignore_nights)
 
@@ -133,6 +134,31 @@ def erase_mosout(nights, params):
         mosout = os.path.join(path, 'logs', 'trump-{}.mosout'.format(night))
         print 'Removing', mosout
         os.remove(mosout)
+
+stereo_dirs = ['bl', 'bm', 'lm', 'blm']
+def erase_stereo(nights, params):
+    """
+    Given a list of nights -- e.g., all with a particular status --
+    remove stereo processing of those nights from the analysis.
+    """
+    from glob import glob
+    import shutil
+    if isinstance(nights, int):
+       nights = [nights]
+    path = params['path']
+    for night in nights:
+        night_dir = os.path.join(path, str(night))
+        dirs = glob(os.path.join(night_dir, '[abl]*'))
+        for d in dirs:
+            base = os.path.basename(d)
+            if base in stereo_dirs or base.startswith('ascii'):
+                print 'removing', d
+                shutil.rmtree(d)
+        downlists =  glob(os.path.join(night_dir, 'trump', '*', 'downlist-{}-*.txt'.format(night)))
+        for d in downlists:
+            print 'removing', d
+            os.remove(d)
+        #print night, dirs
 
 if __name__ == '__main__':
     date_status, params = run()
