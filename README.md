@@ -2,6 +2,10 @@
 This repository is for code that I develop as part of my workflow
 in performing research on the Telescope Array Experiment.
 
+##pro
+Current code - intended for production, under active development. Everything
+listed after this is "legacy" code, intended for eventual replacement.
+
 ##data
 
 I store and process TA data on a computing cluster at the University of Utah.
