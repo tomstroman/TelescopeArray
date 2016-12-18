@@ -38,7 +38,7 @@ def init(dbfile=db.db, properties=default_properties):
         cur.executemany('INSERT INTO Properties VALUES(?, ?)', properties)
 
         cur.execute('DROP TABLE IF EXISTS StereoIgnoreNights')
-        cur.execute('CREATE TABLE StereoIgnoreNights(date INTEGER PRIMARY KEY, reason TEXT)')
+        cur.execute('CREATE TABLE StereoIgnoreNights(date INTEGER, reason TEXT, modelsource TEXT, UNIQUE(date, modelsource))')
     
     
 if __name__ == '__main__':
