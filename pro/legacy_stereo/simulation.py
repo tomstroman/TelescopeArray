@@ -42,6 +42,9 @@ def run_trump_sim(night, params):
     Call legacy code that runs TRUMP, uses its output for a tandem MC simulation
     of Middle Drum, and performs initial event reconstruction.
     """
+    if not params['is_mc']:
+        return None
+
     analysis = params['path']
     trump_path = os.path.join(analysis, str(night), 'trump')
 
@@ -66,6 +69,9 @@ def verify_sim(night, params):
     """
     Inspect the output from a simulation and ensure completion and self-consistency.
     """
+    if not params['is_mc']:
+        return None
+
     analysis = params['path']
     trump_path = os.path.join(analysis, str(night), 'trump')
     moslog_file = os.path.join(analysis, 'logs', 'trump-{}.mosout'.format(night))

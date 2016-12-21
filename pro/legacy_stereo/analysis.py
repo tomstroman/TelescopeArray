@@ -17,6 +17,10 @@ dst_stderr = ' $$$ dst_get_block_ : End of input file reached\n'
 def analyze_and_dump(night, params):
     analysis = params['path']
     path = os.path.join(analysis, str(night))
+
+    if not os.path.isdir(path): # path may not exist!
+        os.system('mkdir -p {}'.format(path))
+
     stdout = os.path.join(path, 'stereo_log.out.txt')
     stderr = stdout.replace('out.txt', 'err.txt')
     cmd = 'python {} {} > {} 2> {}'.format(stereo_exe, path, stdout, stderr)
@@ -29,7 +33,6 @@ def analyze_and_dump(night, params):
     err = open(stderr, 'r').read()
 
     reperr = err.replace(dst_stderr, '')
-
     if reperr:
         print 'analyze_and_dump: stderr below'
         print reperr
@@ -47,8 +50,14 @@ def analyze_and_dump(night, params):
 
     in_progress_count = out.count('is being produced by PID')
     if in_progress_count:
-        print 'Waiting for {} profile(s).'.format(in_progress_count)
+        print 'Waiting for profile(s) profile from {} event(s).'.format(in_progress_count)
         return 'Profiles found in queue'
+
+    error_count = out.count('Error: missing output files')
+    if error_count:
+        print 'Missing expected output for {} event(s). For details see: \n{}'.format(error_count, stdout)
+        return 'analysis complete with error'
+
     print 'Complete!'
     return 'analysis complete'
 

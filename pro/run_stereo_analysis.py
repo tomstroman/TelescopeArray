@@ -13,7 +13,9 @@ import subprocess
 
 # hard-code these here, for now:
 model = 'qgsjetii-03'
-source = 'mc-proton'
+#source = 'mc-proton'
+#source = 'nature'
+source = 'mc-iron0'
 
 
 ignorable_night_reasons = ['no TRUMP conf found', 'analysis complete']
@@ -38,13 +40,18 @@ def _get_mosix_jobs():
 
     return jobs
 
+def _modelsource(model, source):
+    return ''.join([i for i in model+source if i.isalnum()])
+
 def run(dbfile='db/tafd_analysis.db'):
     analysis_db = DatabaseWrapper(dbfile)
 
     properties = {name: value for name, value in analysis_db.retrieve("SELECT name, value FROM Properties")}
     print properties
-    
-    ignore_nights = {d: 'ignored: '+r for d,r in analysis_db.retrieve("SELECT date, reason FROM StereoIgnoreNights")}
+
+    modelsource = _modelsource(model, source)
+
+    ignore_nights = {d: 'ignored: '+r for d,r in analysis_db.retrieve("SELECT date, reason FROM StereoIgnoreNights WHERE modelsource='{}'".format(modelsource))}
 
     rootpath = properties['ROOTPATH']
     dates_file = os.path.join(rootpath, 'list-of-dates')
@@ -104,7 +111,7 @@ def run(dbfile='db/tafd_analysis.db'):
 
         if date_status[date] in ignorable_night_reasons:
             print 'This date will be ignored in future runs.'
-            analysis_db.insert_row('INSERT INTO StereoIgnoreNights VALUES(?, ?)', (date, date_status[date]))
+            analysis_db.insert_row('INSERT INTO StereoIgnoreNights VALUES(?, ?, ?)', (date, date_status[date], modelsource))
 
     return date_status, params
 
@@ -146,6 +153,7 @@ def erase_stereo(nights, params):
     if isinstance(nights, int):
        nights = [nights]
     path = params['path']
+
     for night in nights:
         night_dir = os.path.join(path, str(night))
         dirs = glob(os.path.join(night_dir, '[abl]*'))
