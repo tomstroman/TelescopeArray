@@ -3,6 +3,7 @@
 # Functions for preparing DST files from raw Telescope Array FADC data.
 
 import os
+import time
 from glob import glob
 
 from utils import _command, _ymdps, _timecorr_path
@@ -138,6 +139,11 @@ def _sync_to_tama(source):
     out, err = _command(cmd)
     
     assert not err
+    final_path = os.path.join(key, tokens[-2], tokens[-1])
+    print 'Confirming existence of', final_path
+    while not os.path.exists(final_path):
+        print 'Waiting 1 second'
+        time.sleep(1)
 
 from db.database_wrapper import DatabaseWrapper
 
@@ -171,5 +177,21 @@ def run_timecorr(night, _params):
         
     return None
 
+def make_tama(part, daq_pref):
+    print 'tama', part, daq_pref
+    return daq_pref
 
+def run_tama(night, _params):
+    db = DatabaseWrapper('db/fadc_data.db')
+    parts = db.retrieve('SELECT p.part11, f.ctdprefix FROM Parts AS p JOIN Filesets AS f ON p.part11=f.part11 WHERE p.date={}'.format(night))
+
+    create_attempts = {}
+    failures = 0
+    for part, ctdprefix in parts:
+        daq_pref = os.path.basename(ctdprefix)
+        try:
+            verify_tama_exists(part, daq_pref)
+        except AssertionError:
+            print 'no TAMA for', part, ctdprefix
+            eventcounts = make_tama(part, daq_pref)
 
