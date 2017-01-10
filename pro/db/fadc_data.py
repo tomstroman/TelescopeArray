@@ -6,7 +6,7 @@ import sqlite3
 import os
 import re
 from glob import glob
-default_dbfile = 'fadc_data.db'
+default_dbfile = 'db/fadc_data.db'
 
 from database_wrapper import DatabaseWrapper
 

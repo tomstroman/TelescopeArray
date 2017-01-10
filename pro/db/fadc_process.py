@@ -7,9 +7,12 @@ import os
 from database_wrapper import DatabaseWrapper
 
 from fadc_data import default_dbfile as rawdata_dbfile
+
+import utils
+
 rawdb = DatabaseWrapper(rawdata_dbfile)
 
-default_dbfile = 'fadc_process.db'
+default_dbfile = 'db/fadc_process.db'
 db = DatabaseWrapper(default_dbfile)
 
 def init(dbfile=db.db):
@@ -58,10 +61,17 @@ def update_parts_with_ctd():
         try:
             with open(timecorr, 'r') as tcfile:
                 tc = tcfile.readlines()
-                ctdtrigs.append((len(tc), part))
+                if len(tc):
+                    jstart = utils.get_jstart(timecorr, tc[0])
+                else:
+                    jstart = None
+                ctdtrigs.append((len(tc), jstart, part))
         except IOError:
             continue
-    db.update_rows('UPDATE Parts SET ctdtrig=? WHERE part=?', tuple(ctdtrigs))
+        except:
+            print 'Error in', timecorr
+            continue
+    db.update_rows('UPDATE Parts SET ctdtrig=?, jstart=? WHERE part=?', tuple(ctdtrigs))
 
 def _process_eventcounts(eventcounts):
     with open(eventcounts, 'r') as ecfile:

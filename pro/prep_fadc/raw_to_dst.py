@@ -6,7 +6,7 @@ import os
 import time
 from glob import glob
 
-from utils import _command, _ymdps, _timecorr_path
+from utils import _command, _ymdps, _timecorr_path, _camlist
 
 site_names = {'0': 'black-rock', '1': 'long-ridge'}
 site_ids = {v: k for k, v in site_names.items()}
@@ -111,11 +111,7 @@ def make_timecorr(part_code, daq_pref):
     print timecorr
     
     rel_dir = os.path.join(site_names[s], '{}{}{}'.format(y, m, d))
-
     output_dir = os.path.join(scratch, rel_dir)
-    
-    
-    
     os.system('mkdir -p ' + output_dir)
 
     _call_timecorr(s, output_dir, daq_pref)
@@ -177,21 +173,46 @@ def run_timecorr(night, _params):
         
     return None
 
-def make_tama(part, daq_pref):
+def make_tama(part, daqcams, ctdprefix):
+    daq_pref = os.path.basename(ctdprefix)
     print 'tama', part, daq_pref
+    timecorr = _timecorr_path(part)
+    y, m, d, p, s = _ymdps(part)
+
+    ctd_triggers = len(open(timecorr, 'r').readlines())
+    cams = _camlist(daqcams)
+    ctd_file_template = ctdprefix + '-{}-{{0:07}}.d.bz2'.format(s)
+    cam_file_template = ctdprefix.replace('/ctd/', '/camera{0:02}/') + '-{}-{{0:x}}'.format(s)
+    cam_files_template = ' '.join([cam_file_template.format(c) + '-{0:07}.d.bz2' for c in cams])
+
+    rel_dir = os.path.join(site_names[s], '{}{}{}'.format(y, m, d))
+    output_dir = os.path.join(scratch, rel_dir)
+    os.system('mkdir -p ' + output_dir)
+
+    dst_output_template = os.path.join(output_dir, daq_pref + '-{}-{{0:07}}.dst.gz'.format(s))
+    tama_code = '{}{}{}{}'.format(y[2:], m, d, p)
+    cmd_template = 'mosenv -q -J{{1}} -b -l -m320 -e {} -o {} -r {} {} {}'.format(tama_exe, dst_output_template, tama_code, ctd_file_template, cam_files_template)
+
+    for trigset in range(0, ctd_triggers, 256):
+        jobid = '{}{}'.format(tama_code, int(trigset/256))
+        assert jobid < 2147483648 # needs to fit inside a 32-bit signed integer
+        cmd = cmd_template.format(trigset, jobid)
+    #    subprocess.Popen(cmd, shell=True)
+        print cmd
+
     return daq_pref
 
 def run_tama(night, _params):
     db = DatabaseWrapper('db/fadc_data.db')
-    parts = db.retrieve('SELECT p.part11, f.ctdprefix FROM Parts AS p JOIN Filesets AS f ON p.part11=f.part11 WHERE p.date={}'.format(night))
+    parts = db.retrieve('SELECT p.part11, p.daqcams, f.ctdprefix FROM Parts AS p JOIN Filesets AS f ON p.part11=f.part11 WHERE p.date={}'.format(night))
 
     create_attempts = {}
     failures = 0
-    for part, ctdprefix in parts:
+    for part, daqcams, ctdprefix in parts:
         daq_pref = os.path.basename(ctdprefix)
         try:
             verify_tama_exists(part, daq_pref)
         except AssertionError:
             print 'no TAMA for', part, ctdprefix
-            eventcounts = make_tama(part, daq_pref)
+            eventcounts = make_tama(part, daqcams, ctdprefix)
 
