@@ -35,7 +35,7 @@ from legacy_stereo import simulation, analysis
     
 data_steps = [Step('run_timecorr', raw_to_dst.run_timecorr),
               Step('run_tama', raw_to_dst.run_tama),
-              Step('run_fdped', foo),
+              Step('run_fdped', raw_to_dst.run_fdped),
               Step('run_fdplane', foo),
               Step('get_mdps3', foo),
               ]

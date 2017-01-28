@@ -57,7 +57,6 @@ def update_parts_with_ctd():
     ctdtrigs = []
     for part, in db_parts_no_ctd:
         timecorr = _timecorr_path(part)
-        print timecorr
         try:
             with open(timecorr, 'r') as tcfile:
                 tc = tcfile.readlines()
@@ -71,6 +70,8 @@ def update_parts_with_ctd():
         except:
             print 'Error in', timecorr
             continue
+        print 'Complete:', timecorr
+
     db.update_rows('UPDATE Parts SET ctdtrig=?, jstart=? WHERE part=?', tuple(ctdtrigs))
 
 def _process_eventcounts(eventcounts):
