@@ -27,10 +27,11 @@ args = parser.parse_args()
 part = args.part
 output = args.output_dir
 
-dbpart = raw_db.retrieve('SELECT p.daqcams, f.ctdprefix FROM Parts AS p JOIN Filesets AS f ON p.part11=f.part11 WHERE p.part11={}'.format(part))
+dbpart = raw_db.retrieve('SELECT p.daqcams, p.site, f.ctdprefix FROM Parts AS p JOIN Filesets AS f ON p.part11=f.part11 WHERE p.part11={}'.format(part))
 
 assert len(dbpart) == 1
-daqcams, ctdprefix = dbpart[0]
+daqcams, site, ctdprefix = dbpart[0]
+print ctdprefix
 
 camlist = _camlist(daqcams)
 
@@ -38,11 +39,25 @@ if args.camera in camlist:
     cams = [args.camera]
 else:
     cams = camlist
-print cams
+print 'Using camera(s):', cams
 tcfile = _timecorr_path(part)
 assert os.path.exists(tcfile)
 cmd = 'cp -v {} {}'.format(tcfile, output)
-print cmd
-#os.system(cmd)
+os.system(cmd)
 
+tcfile = os.path.join(output, os.path.basename(tcfile))
+with open(tcfile, 'r') as tc:
+    tclines = tc.readlines()
+num_triggers = len(tclines)
+print num_triggers
+for trigset in range(0, num_triggers, 256):
+    t7 = '{:07}'.format(trigset)
+    ctd = '{}-{}-{}.d.bz2'.format(ctdprefix, site, t7)
+    outfile = os.path.basename(ctd).replace('DAQ', 'FDMEAN').replace('d.bz2', 'dst.gz')
+    outfile_path = os.path.join(output, outfile)
+    cmd = '$TAHOME/tama/bin/tama.run -m -o {} {} '.format(outfile_path, ctd)
+    for cam in cams:
+        cmd += ctd.replace('ctd', 'camera{:02}'.format(cam)).replace('-{}-{}.d.bz2'.format(site, t7), 
+                '-{}-{:x}-{}.d.bz2 '.format(site, cam, t7))
+    os.system(cmd)
 
