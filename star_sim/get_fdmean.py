@@ -46,6 +46,8 @@ else:
 if args.camera != -1 and cams[0] != args.camera:
     print '!!! Warning !!! Requested camera not found.'
 print 'Using camera(s):', cams
+
+# Locate the timecorr file and copy to destination, and prepare logs directory
 tcfile = _timecorr_path(part)
 assert os.path.exists(tcfile)
 cmd = 'cp -v {} {}'.format(tcfile, output)
@@ -53,18 +55,21 @@ os.system(cmd)
 logdir = os.path.join(output, 'logs')
 os.system('mkdir -p {}'.format(logdir))
 
-
+# Read the number of triggers in the raw data files
 tcfile = os.path.join(output, os.path.basename(tcfile))
 with open(tcfile, 'r') as tc:
     tclines = tc.readlines()
 num_triggers = len(tclines)
 print num_triggers
 
+# Loop over raw data files, organized in 256-trigger chunks, with TAMA calls
 outfiles = []
 for trigset in range(0, num_triggers, 256):
     t7 = '{:07}'.format(trigset)
     ctd = '{}-{}-{}.d.bz2'.format(ctdprefix, site, t7)
     outfile = os.path.basename(ctd).replace('DAQ', 'FDMEAN').replace('d.bz2', 'dst.gz')
+    if len(cams) == 1:
+        outfile = outfile.replace('-{}-{}.dst.gz'.format(site, t7), '-{}-{:x}-{}.dst.gz'.format(site, cams[0], t7))
     outfile_path = os.path.join(output, outfile)
     outfiles.append(outfile_path)
     if os.path.exists(outfile_path) and not force_rebuild:
@@ -79,9 +84,31 @@ for trigset in range(0, num_triggers, 256):
     print ctd
     os.system(cmd)
 
+# Concatenate the output files into a single file
 combined_outfile = outfiles[0][:-len('-1234567.dst.gz')] + '.dst.gz'
 print combined_outfile
 cmd = 'dstcat -o {} '.format(combined_outfile) + ' '.join(outfiles)
 if not os.path.exists(combined_outfile) or force_rebuild:
     os.system(cmd)
 assert os.path.exists(combined_outfile)
+
+# Call calibration C code (compile if necessary)
+calibrate_exe = 'calibrate.run'
+calibrate_c = 'calibrate.c'
+if not os.path.exists(calibrate_exe):
+    print '{} not found. Attempting to compile using comments in {}'.format(calibrate_exe, calibrate_c)
+    with open(calibrate_c, 'r') as cc_file:
+        cc = cc_file.readlines()
+    for line in cc:
+        if line.startswith('gcc -'):
+            print line
+            os.system(line)
+
+assert os.path.exists(calibrate_exe)
+
+calibrated_outfile = combined_outfile.replace('.dst.gz', '-calibrated.txt')
+if not os.path.exists(calibrated_outfile) or force_rebuild:
+    cmd = '{} {} {}'.format(calibrate_exe, combined_outfile, calibrated_outfile)
+    os.system(cmd)
+
+print calibrated_outfile
