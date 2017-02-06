@@ -261,7 +261,7 @@ for tag in root_batches:
   
   if 'Prof' in root_batches[tag]:
     final_root_name += 'Prof'
-    profile_parser = mypath + '/readprof.C'
+    profile_parser = mypath + '/readprof2.C'
     rb = root_batches[tag]['Prof']
     
     for sp in ordered_species:
