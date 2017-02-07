@@ -28,14 +28,19 @@ RuntimeParameters par;
 FILE *fp;
 int main(int argc, char *argv[]) {
   fp = stdout;
+  int cam;
 // Crude validation of arguments
   switch(argc) {
+    case 4:
+      fp = fopen(argv[3], "w");
     case 3:
-      fp = fopen(argv[2], "w");
-    case 2:
-      break;
+      cam = atoi(argv[2]);
+      if (cam >= -1 && cam < 12) {
+        break;
+      }
     default:
-      fprintf(stderr, "Usage:\n\n  %s dstfile [output]\n\n", argv[0]);
+      fprintf(stderr, "Usage:\n\n  %s dstfile cam_id [output]\n", argv[0]);
+      fprintf(stderr, "  cam_id = 0 through 11, or -1 for all cameras\n\n");
       return -1;
   }
   
@@ -56,9 +61,12 @@ int main(int argc, char *argv[]) {
   int i, j, k;
   int minmean[12][256];
 
-  for (j=0; j<12; j++)
+  for (j=0; j<12; j++) {
+    if (cam > -1 && j != cam)
+      continue;
     for (i=0; i<256; i++)
       minmean[j][i] = 0xffffff;
+  }
 
   double jtime;
 // Open the DST file and read it, finding minima, then close it.
@@ -70,6 +78,8 @@ int main(int argc, char *argv[]) {
       fprintf(stderr, "ntrig: %d\n", ntrig);
       for (i=0; i<fdmean->ntrig; i++) {
         for (j=0; j<12; j++) {
+          if (cam > -1 && j != cam)
+            continue;
           for (k=0; k<256; k++) {
             if (fdmean->mean[i][j][k][DEFAULT_INDEX] < minmean[j][k]) {
               minmean[j][k] = fdmean->mean[i][j][k][DEFAULT_INDEX];
@@ -84,6 +94,8 @@ int main(int argc, char *argv[]) {
 
   /*
   for (i=0; i<12; i++) {
+    if (cam > -1 && i != cam)
+      continue;
     fprintf(stderr, "cam %d:\n", i);
     for (j=0; j<256; j++) {
       if (j%16 == 0) {
@@ -108,9 +120,11 @@ int main(int argc, char *argv[]) {
         par.jday = (int)jtime;
         par.jsec = (int)((jtime - par.jday) * 86400.);
         jul2cal(&par);
-        
+
         getTATimeDependentCalibration(&par, &cal);
         for (j=0; j<12; j++) {
+          if (cam > -1 && j != cam)
+            continue;
           for (k=0; k<256; k++) {
             mean_npe = (fdmean->mean[i][j][k][DEFAULT_INDEX] - minmean[j][k]) / cal.pmtgain[j][k];
             fprintf(fp, "%.8f %d %d %f\n", jtime, j, k, mean_npe);
@@ -122,7 +136,7 @@ int main(int argc, char *argv[]) {
 
   dstCloseUnit(IN_UNIT);
 
-  if (argc == 3) {
+  if (argc == 4) {
     fclose(fp);
   }
   return 0;
