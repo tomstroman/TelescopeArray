@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
             continue;
           for (k=0; k<256; k++) {
             mean_npe = (fdmean->mean[i][j][k][DEFAULT_INDEX] - minmean[j][k]) / cal.pmtgain[j][k];
-            fprintf(fp, "%.8f %d %d %f\n", jtime, j, k, mean_npe);
+            fprintf(fp, "%.8f %d %d %d %f\n", jtime, j, k, fdmean->mean[i][j][k][DEFAULT_INDEX], mean_npe);
           }
         }
       }
