@@ -45,18 +45,32 @@ def query(jdate, object_name):
     conn.request('POST', '/api/main/focus', params)
     response = conn.getresponse()
     assert response.status == 200
-    print response.read()
+    assert json.loads(response.read()) == True
 
     # Get the information about the object
-    conn.request('GET', '/api/objects/info')
+    #conn.request('GET', '/api/objects/info')
+    conn.request('GET', '/api/main/status')
     response = conn.getresponse()
-    assert response.status == 200
+    assert response.status == 200    
     status = response.read()
+    j = json.loads(status)
 
-    # use regex to get right ascension and declination
-    a = re.findall("(?<=RA/Dec \(on date\):)(.*)h(.*)m(.*)s/(.*)\xc2\xb0(.*)\'(.*)\"(?=<br>Hour angle)", status)
+    utc = ''.join([c for c in j['time']['utc'] if c.isdigit()])
+    sim_params = {'ymd': utc[0:8], 'hmsi': utc[8:14]} # truncate to integer second
+    
+
+    # use regex to get right ascension and declination    
+    prefix = '(?<=RA/Dec \(on date\):)'
+    coords = '(.*)h(.*)m(.*)s/(.*)\xc2\xb0(.*)\'(.*)"'
+    suffix = '(?=<br>Hour angle)'
+    regex = prefix + coords + suffix
+    a = re.findall(regex, j['selectioninfo'].encode('utf-8'))
     assert len(a) == 1
-    return a[0]
+    
+    sim_params['ra3'] = ' '.join(a[0][0:3]).strip()
+    sim_params['dec3'] = ' '.join(a[0][3:]).strip()
+    
+    return sim_params
 
 
 if __name__ == '__main__':
