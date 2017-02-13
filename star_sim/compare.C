@@ -15,8 +15,12 @@
 #include "TCanvas.h"
 #include "TStyle.h"
 #include "TMath.h"
+#include "TGraph.h"
 #include "TGraph2D.h"
 #define SEC_PER_BIN 5
+
+double pmtX[256], pmtY[256];
+double dist[256][256];
 
 double utc_sec(double jd) {
   return fmod(jd - 0.5, 1.0) * 86400.0;
@@ -47,69 +51,49 @@ void calculateDistances(double x[256], double y[256], double r[256][256]) {
   }
 }
 
-
-void compare(const char *obsfile, const char *simfile) {
-  gStyle->SetNumberContours(50);
-  TTree *obs = new TTree();
-  printf("Reading observation data...\n");
-  obs->ReadFile(obsfile, "jtime/D:cam/I:pmt:m0:npe/F");
-  
-  TTree *sim = new TTree();
-  printf("Reading simulation data...\n");
-  sim->ReadFile(simfile, "jtime/D:cam/I:pmt:x/F:y");
-  
-//   printf("obs entries: %ld; sim rays: %ld\n", obs->GetEntries(), sim->GetEntries());
-  
-  double jstart = obs->GetMinimum("jtime");
-  double jend = obs->GetMaximum("jtime");
-  double dur_sec = (jend - jstart) * 86400.;
-  int start_sec_utc = (int)utc_sec(jstart);  
-  printf("start_sec_utc: %d\n", start_sec_utc);
-  
-  int nbins = (int)(dur_sec / SEC_PER_BIN) + 1;
-  
-  TProfile2D *obspmt = new TProfile2D("obspmt", "", 
-                          nbins, start_sec_utc, start_sec_utc + nbins*SEC_PER_BIN, 
-                          256, 0, 256);
-  obspmt->SetStats(0);
-  TH2F *simpmt = new TH2F("simpmt", "", 
-                          nbins, start_sec_utc, start_sec_utc + nbins*SEC_PER_BIN, 
-                          256, 0, 256);
-  simpmt->SetStats(0);
-  
-  obs->Project("obspmt", "npe:pmt:utc_sec(jtime)", "", "prof");  
-  TCanvas *c1 = new TCanvas("c1", "c1");
-  c1->cd();
-//   obspmt->Draw("colz");
-  
-  sim->Project("simpmt", "pmt:utc_sec(jtime)", "pmt>=0");
-//   TCanvas *c2 = new TCanvas("c2", "c2");
-//   c2->cd();
-//   simpmt->Draw("colz");
-  
-  double pmtX[256], pmtY[256];
-  double dist[256][256];
-  fillPmtCoords(pmtX, pmtY);
-  calculateDistances(pmtX, pmtY, dist);
-
-  
+void analyzeCentroids(TH2F *simpmt, TProfile2D *obspmt, const char* pdfname = "centroids.pdf") {
   TGraph2D *simcentroid = new TGraph2D(1);
   simcentroid->SetName("simcentroid");
   
   TGraph2D *obscentroid = new TGraph2D(1);
   obscentroid->SetName("obscentroid");
 
+  TGraph2D *diffcentroid = new TGraph2D(1);
+  diffcentroid->SetName("diffcentroid");
+  
+  TGraph *dcenx = new TGraph(1);
+  dcenx->SetName("dcenx");
+  dcenx->SetTitle("Centroid X: sim minus obs;UTC second;meters");
+//   gDirectory->GetList()->Add(dcenx);
+  TGraph *dceny = new TGraph(1);
+  dceny->SetName("dceny");
+  dceny->SetTitle("Centroid Y: sim minus obs;UTC second;meters");
+//   gDirectory->GetList()->Add(dceny);
+  TGraph *dcenr = new TGraph(1);
+  dcenr->SetName("dcenr");
+  dcenr->SetTitle("Centroid distance between sim and obs;UTC second;meters");
+//   gDirectory->GetList()->Add(dcenr);
+  TGraph *dcenf = new TGraph(1);
+  dcenf->SetName("dcenf");
+  dcenf->SetTitle("Centroid #phi: obs to sim;UTC second;degrees");
+//   gDirectory->GetList()->Add(dcenf);
+  
   int i, j;
   double x, y, w, sum;
   double ox, oy, ow, osum;
   TH1D *spy, *opy;
   int smaxpmt, omaxpmt;
   double utc_sec;
+  
+  int nbins = simpmt->GetNbinsX();
   for (i=1; i<=nbins; i++) {
     utc_sec = simpmt->GetBinCenter(i);
     simpmt->ProjectionY("spy", i, i);
     spy = (TH1D*)gROOT->FindObject("spy");
     smaxpmt = spy->GetMaximumBin() - 1;
+    if (spy->GetMaximum() == 0) {
+      continue;
+    }
     
     obspmt->ProjectionY("opy", i, i);
     opy = (TH1D*)gROOT->FindObject("opy");
@@ -118,7 +102,7 @@ void compare(const char *obsfile, const char *simfile) {
     if (dist[smaxpmt][omaxpmt] > 0.15) {
       printf("Bin %d (utc %f): s %d, but o %d (dist %f)\n", 
              i, utc_sec, smaxpmt, omaxpmt, dist[smaxpmt][omaxpmt]);
-      break;
+      continue;
     }
     
 //     printf("Max bin: %d (%f) sim, %d (%f) obs\n", 
@@ -159,9 +143,73 @@ void compare(const char *obsfile, const char *simfile) {
       ox = oy = 0;
     }
     obscentroid->SetPoint(i-1, ox, oy, utc_sec);
+    
+    if (sum > 0 && osum > 0) {
+      diffcentroid->SetPoint(i-1, x-ox, y-oy, utc_sec);
+      dcenx->SetPoint(i-1, utc_sec, x-ox);
+      dceny->SetPoint(i-1, utc_sec, y-oy);
+      dcenr->SetPoint(i-1, utc_sec, TMath::Sqrt((x-ox)*(x-ox) + (y-oy)*(y-oy)));
+      dcenf->SetPoint(i-1, utc_sec, TMath::ATan2(y-oy, x-ox) * TMath::RadToDeg());
+    }
+    
   }
   
+  TCanvas *c1 = new TCanvas("c1", "c1");
+  dcenx->Draw("ap");
+  c1->Print(Form("%s(", pdfname), "pdf");
+  dceny->Draw("ap");
+  c1->Print(pdfname);
+  dcenr->Draw("ap");
+  c1->Print(pdfname);
+  dcenf->Draw("ap");
+  c1->Print(Form("%s)", pdfname), "pdf");
+  c1->Close();
+}
+
+void compare(const char *obsfile, const char *simfile) {
+  gStyle->SetNumberContours(50);
+  TTree *obs = new TTree();
+  printf("Reading observation data...\n");
+  obs->ReadFile(obsfile, "jtime/D:cam/I:pmt:m0:npe/F");
   
+  TTree *sim = new TTree();
+  printf("Reading simulation data...\n");
+  sim->ReadFile(simfile, "jtime/D:cam/I:pmt:x/F:y");
   
+//   printf("obs entries: %ld; sim rays: %ld\n", obs->GetEntries(), sim->GetEntries());
+  
+  double jstart = obs->GetMinimum("jtime");
+  double jend = obs->GetMaximum("jtime");
+  double dur_sec = (jend - jstart) * 86400.;
+  int start_sec_utc = (int)utc_sec(jstart);  
+  printf("start_sec_utc: %d\n", start_sec_utc);
+  
+  int nbins = (int)(dur_sec / SEC_PER_BIN) + 1;
+  
+  TProfile2D *obspmt = new TProfile2D("obspmt", "", 
+                          nbins, start_sec_utc, start_sec_utc + nbins*SEC_PER_BIN, 
+                          256, 0, 256);
+  obspmt->SetStats(0);
+  TH2F *simpmt = new TH2F("simpmt", "", 
+                          nbins, start_sec_utc, start_sec_utc + nbins*SEC_PER_BIN, 
+                          256, 0, 256);
+  simpmt->SetStats(0);
+  
+  obs->Project("obspmt", "npe:pmt:utc_sec(jtime)", "", "prof");  
+
+//   obspmt->Draw("colz");
+  
+  sim->Project("simpmt", "pmt:utc_sec(jtime)", "pmt>=0");
+//   TCanvas *c2 = new TCanvas("c2", "c2");
+//   c2->cd();
+//   simpmt->Draw("colz");
+  
+
+  fillPmtCoords(pmtX, pmtY);
+  calculateDistances(pmtX, pmtY, dist);
+
+  analyzeCentroids(simpmt, obspmt, "analyze-centroids.pdf");
+  
+
 }
 
