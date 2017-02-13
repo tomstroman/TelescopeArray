@@ -17,7 +17,12 @@
 #include "TMath.h"
 #include "TGraph.h"
 #include "TGraph2D.h"
+
 #define SEC_PER_BIN 5
+#define PMTGAP 0.002
+#define PMTPTP 0.0693
+#define PMTFTF 0.06
+#define COS30 0.866025403784438708
 
 double pmtX[256], pmtY[256];
 double dist[256][256];
@@ -27,16 +32,52 @@ double utc_sec(double jd) {
 }
 
 void fillPmtCoords(double *x, double *y) {
-  Double_t pmtgap = 0.002, pmtptp = 0.0693, pmtftf = 0.06;
-  Double_t cos30 = TMath::Cos(30*TMath::DegToRad());
   int i, row, col;
   for (i=0; i<256; i++) {
     col = (i - (i % 16) )/ 16;
     row = i % 16;
     
-    x[i] = -(pmtftf + pmtgap) * ((double)col - 7.75 + 0.5*(double)(row % 2));
-    y[i] = (pmtptp + pmtgap/cos30)*0.75 * (7.5 - (double)row);
+    x[i] = -(PMTFTF + PMTGAP) * ((double)col - 7.75 + 0.5*(double)(row % 2));
+    y[i] = (PMTPTP + PMTGAP/COS30)*0.75 * (7.5 - (double)row);
   }
+}
+
+TCanvas *camFace() {
+  char canvname[64] = "camface";
+  TCanvas *camface = (TCanvas*)gROOT->FindObject(canvname);
+  if (!camface) {
+    camface = new TCanvas(canvname, "cam", 580 + 28, 505 + 4);
+  }
+  TGraph *box = new TGraph(5);
+  box->SetTitle("Camera face;-x (m);y (m)");
+  Double_t wbox = 1.16;
+  Double_t hbox = 1.01;
+  
+  Double_t xbox[5] = {-1, 1, 1, -1, -1};
+  Double_t ybox[5] = {1, 1, -1, -1, 1};
+  int i, v;
+  for (i=0; i<5; i++) {
+    box->SetPoint(i, 0.5*wbox*xbox[i], 0.5*hbox*ybox[i]);
+  }
+  
+  box->Draw("al");
+  
+  Double_t xpmt[7] = {0, COS30, COS30, 0, -COS30, -COS30, 0};
+  Double_t ypmt[7] = {1, 0.5, -0.5, -1, -0.5, 0.5, 1};
+  
+  TGraph *pmthex[256];
+  for (i=0; i<256; i++) {
+    pmthex[i] = new TGraph(7);
+    for (v=0; v<7; v++) {
+      pmthex[i]->SetPoint(v, pmtX[i] + xpmt[v]*0.5*PMTPTP,
+                          pmtY[i] + ypmt[v]*0.5*PMTPTP);
+    }
+    pmthex[i]->SetLineColor(15);
+    pmthex[i]->SetLineWidth(0.1);
+    pmthex[i]->Draw();
+  }
+  
+  return camface;
 }
 
 // this is likely a premature optimization but we'll be doing so many
@@ -52,11 +93,13 @@ void calculateDistances(double x[256], double y[256], double r[256][256]) {
 }
 
 void analyzeCentroids(TH2F *simpmt, TProfile2D *obspmt, const char* pdfname = "centroids.pdf") {
-  TGraph2D *simcentroid = new TGraph2D(1);
+  TGraph/*2D*/ *simcentroid = new TGraph/*2D*/(1);
   simcentroid->SetName("simcentroid");
+  simcentroid->SetMarkerColor(kRed);
   
-  TGraph2D *obscentroid = new TGraph2D(1);
+  TGraph/*2D*/ *obscentroid = new TGraph/*2D*/(1);
   obscentroid->SetName("obscentroid");
+  obscentroid->SetMarkerColor(kBlue);
 
   TGraph2D *diffcentroid = new TGraph2D(1);
   diffcentroid->SetName("diffcentroid");
@@ -133,7 +176,7 @@ void analyzeCentroids(TH2F *simpmt, TProfile2D *obspmt, const char* pdfname = "c
       printf("bin %d - no sim (sum=0)\n", i);
       x = y = 0;
     }
-    simcentroid->SetPoint(i-1, x, y, utc_sec);
+    simcentroid->SetPoint(i-1, x, y/*, utc_sec*/);
     
     if (osum > 0) {
       ox /= osum;
@@ -142,7 +185,7 @@ void analyzeCentroids(TH2F *simpmt, TProfile2D *obspmt, const char* pdfname = "c
     else {
       ox = oy = 0;
     }
-    obscentroid->SetPoint(i-1, ox, oy, utc_sec);
+    obscentroid->SetPoint(i-1, ox, oy/*, utc_sec*/);
     
     if (sum > 0 && osum > 0) {
       diffcentroid->SetPoint(i-1, x-ox, y-oy, utc_sec);
@@ -153,16 +196,23 @@ void analyzeCentroids(TH2F *simpmt, TProfile2D *obspmt, const char* pdfname = "c
     }
     
   }
+
+  TCanvas *camface = camFace();
+  simcentroid->Draw("p");
+  obscentroid->Draw("p");
+  camface->Print(Form("%s(", pdfname), "pdf");
+  camface->Close();
   
   TCanvas *c1 = new TCanvas("c1", "c1");
   dcenx->Draw("ap");
-  c1->Print(Form("%s(", pdfname), "pdf");
+  c1->Print(pdfname);
   dceny->Draw("ap");
   c1->Print(pdfname);
   dcenr->Draw("ap");
   c1->Print(pdfname);
   dcenf->Draw("ap");
   c1->Print(Form("%s)", pdfname), "pdf");
+  
   c1->Close();
 }
 
@@ -210,6 +260,7 @@ void compare(const char *obsfile, const char *simfile) {
 
   analyzeCentroids(simpmt, obspmt, "analyze-centroids.pdf");
   
+
 
 }
 
