@@ -18,11 +18,16 @@
 #include "TGraph.h"
 #include "TGraph2D.h"
 
-#define SEC_PER_BIN 5
+// Constants
 #define PMTGAP 0.002
 #define PMTPTP 0.0693
 #define PMTFTF 0.06
 #define COS30 0.866025403784438708
+
+// Variables for fine-tuning analysis
+#define SEC_PER_BIN 5
+#define INCLUSION_THRESHOLD 0.2
+#define INTERMAX_GAP_LIMIT 0.15
 
 double pmtX[256], pmtY[256];
 double dist[256][256];
@@ -142,7 +147,7 @@ void analyzeCentroids(TH2F *simpmt, TProfile2D *obspmt, const char* pdfname = "c
     opy = (TH1D*)gROOT->FindObject("opy");
     omaxpmt = opy->GetMaximumBin() - 1;
     
-    if (dist[smaxpmt][omaxpmt] > 0.15) {
+    if (dist[smaxpmt][omaxpmt] > INTERMAX_GAP_LIMIT) {
       printf("Bin %d (utc %f): s %d, but o %d (dist %f)\n", 
              i, utc_sec, smaxpmt, omaxpmt, dist[smaxpmt][omaxpmt]);
       continue;
@@ -156,12 +161,13 @@ void analyzeCentroids(TH2F *simpmt, TProfile2D *obspmt, const char* pdfname = "c
     sum = osum = 0;
     w = ow = 0;
     for (j=1; j<=256; j++) {
-      w = simpmt->GetBinContent(i, j);
-      sum += w;
-      x += w * pmtX[j-1];
-      y += w * pmtY[j-1];
-      
-      if (dist[j-1][omaxpmt] < 0.2) {
+      if (dist[j-1][smaxpmt] < INCLUSION_THRESHOLD) {
+        w = simpmt->GetBinContent(i, j);
+        sum += w;
+        x += w * pmtX[j-1];
+        y += w * pmtY[j-1];
+      }
+      if (dist[j-1][omaxpmt] < INCLUSION_THRESHOLD) {
         ow = obspmt->GetBinContent(i, j);
         osum += ow;
         ox += ow * pmtX[j-1];
