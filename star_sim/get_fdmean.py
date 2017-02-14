@@ -111,4 +111,5 @@ if not os.path.exists(calibrated_outfile) or force_rebuild:
     cmd = '{} {} {} {}'.format(calibrate_exe, combined_outfile, args.camera, calibrated_outfile)
     os.system(cmd)
 
-print calibrated_outfile
+os.system('gzip {}'.format(calibrated_outfile))
+print calibrated_outfile + '.gz'
