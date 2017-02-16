@@ -11,11 +11,11 @@ import sys
 from query_stellarium import query
 
 def _get_site_cam(filename):
-    m = re.findall('(?<=FDMEAN-[0-9]{8}-)([0-9]+)-([0-9]+)(?=-calibrated.txt)', filename)
+    m = re.findall('(?<=FDMEAN-[0-9]{8}-)([0-9]+)-([0-9a-f]+)(?=-calibrated.txt)', filename)
     if not len(m):
         return {'site': None, 'cam': None}
     else:
-        return {'site': int(m[0][0]), 'cam': int(m[0][1])}
+        return {'site': int(m[0][0]), 'cam': int(m[0][1], 16)}
     
 site_abbrev = ['br', 'lr']
 def _geofile(site):
