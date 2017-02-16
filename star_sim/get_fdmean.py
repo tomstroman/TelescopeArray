@@ -48,15 +48,18 @@ if args.camera != -1 and cams[0] != args.camera:
 print 'Using camera(s):', cams
 
 # Locate the timecorr file and copy to destination, and prepare logs directory
-tcfile = _timecorr_path(part)
-assert os.path.exists(tcfile)
-cmd = 'cp -v {} {}'.format(tcfile, output)
-os.system(cmd)
+origtcfile = _timecorr_path(part)
+tcfile = os.path.join(output, os.path.basename(origtcfile))
+if not os.path.exists(tcfile) or force_rebuild:
+  assert os.path.exists(origtcfile)
+  cmd = 'cp -v {} {}'.format(origtcfile, output)
+  os.system(cmd)
+
 logdir = os.path.join(output, 'logs')
 os.system('mkdir -p {}'.format(logdir))
 
 # Read the number of triggers in the raw data files
-tcfile = os.path.join(output, os.path.basename(tcfile))
+assert os.path.exists(tcfile)
 with open(tcfile, 'r') as tc:
     tclines = tc.readlines()
 num_triggers = len(tclines)
