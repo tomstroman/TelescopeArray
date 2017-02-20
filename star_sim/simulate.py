@@ -51,7 +51,7 @@ if __name__ == '__main__':
     sim_params = query(jstart, args.name)
 
     outfile = args.filename.replace('-calibrated', '-simulated')
-    cmd = '$TRUMP/bin/star.run -rays 100 -dt 0.1 -q '
+    cmd = '$TRUMP/bin/star.run -rays 400 -dt 0.1 -q '
     cmd += '-o {} '.format(outfile)
     cmd += '-geo {} -mir {} '.format(_geofile(sitecam['site']), sitecam['cam'])
     cmd += '-dur {} '.format(dur)
