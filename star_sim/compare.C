@@ -126,6 +126,14 @@ void analyzeCentroids(TH2F *simpmt, TProfile2D *obspmt, const char* pdfname = "c
   dcenf->SetTitle("Centroid #phi: obs to sim;UTC second;degrees");
 //   gDirectory->GetList()->Add(dcenf);
   
+  TGraph *obslight = new TGraph(1);
+  obslight->SetName("obslight");
+  obslight->SetTitle("Total signal (observed);UTC second;signal (arbitrary units)");
+  
+  TGraph *simlight = new TGraph(1);
+  simlight->SetName("simlight");
+  simlight->SetTitle("Total signal (simulated);UTC second;signal (arbitrary units)");
+  
   int i, j;
   double x, y, w, sum;
   double ox, oy, ow, osum;
@@ -134,8 +142,11 @@ void analyzeCentroids(TH2F *simpmt, TProfile2D *obspmt, const char* pdfname = "c
   double utc_sec;
   
   int nbins = simpmt->GetNbinsX();
+  int k;
+  k = 0;
   for (i=1; i<=nbins; i++) {
     utc_sec = simpmt->GetBinCenter(i);
+    printf("bin %d, utc_sec %f\n", i, utc_sec);
     simpmt->ProjectionY("spy", i, i);
     spy = (TH1D*)gROOT->FindObject("spy");
     smaxpmt = spy->GetMaximumBin() - 1;
@@ -182,7 +193,7 @@ void analyzeCentroids(TH2F *simpmt, TProfile2D *obspmt, const char* pdfname = "c
       printf("bin %d - no sim (sum=0)\n", i);
       x = y = 0;
     }
-    simcentroid->SetPoint(i-1, x, y/*, utc_sec*/);
+    simcentroid->SetPoint(k, x, y/*, utc_sec*/);
     
     if (osum > 0) {
       ox /= osum;
@@ -191,16 +202,19 @@ void analyzeCentroids(TH2F *simpmt, TProfile2D *obspmt, const char* pdfname = "c
     else {
       ox = oy = 0;
     }
-    obscentroid->SetPoint(i-1, ox, oy/*, utc_sec*/);
+    obscentroid->SetPoint(k, ox, oy/*, utc_sec*/);
     
     if (sum > 0 && osum > 0) {
-      diffcentroid->SetPoint(i-1, x-ox, y-oy, utc_sec);
-      dcenx->SetPoint(i-1, utc_sec, x-ox);
-      dceny->SetPoint(i-1, utc_sec, y-oy);
-      dcenr->SetPoint(i-1, utc_sec, TMath::Sqrt((x-ox)*(x-ox) + (y-oy)*(y-oy)));
-      dcenf->SetPoint(i-1, utc_sec, TMath::ATan2(y-oy, x-ox) * TMath::RadToDeg());
+      diffcentroid->SetPoint(k, x-ox, y-oy, utc_sec);
+      dcenx->SetPoint(k, utc_sec, x-ox);
+      dceny->SetPoint(k, utc_sec, y-oy);
+      dcenr->SetPoint(k, utc_sec, TMath::Sqrt((x-ox)*(x-ox) + (y-oy)*(y-oy)));
+      dcenf->SetPoint(k, utc_sec, TMath::ATan2(y-oy, x-ox) * TMath::RadToDeg());
+      obslight->SetPoint(k, utc_sec, osum);
+      simlight->SetPoint(k, utc_sec, sum);
     }
     
+    k++;
   }
 
   TCanvas *camface = camFace();
@@ -217,12 +231,16 @@ void analyzeCentroids(TH2F *simpmt, TProfile2D *obspmt, const char* pdfname = "c
   dcenr->Draw("ap");
   c1->Print(pdfname);
   dcenf->Draw("ap");
+  c1->Print(pdfname);
+  obslight->Draw("ap");
+  c1->Print(pdfname);
+  simlight->Draw("ap");
   c1->Print(Form("%s)", pdfname), "pdf");
   
   c1->Close();
 }
 
-void compare(const char *obsfile, const char *simfile) {
+void compare(const char *obsfile, const char *simfile, const char *pdfname = NULL) {
   gStyle->SetNumberContours(50);
   TTree *obs = new TTree();
   printf("Reading observation data...\n");
@@ -233,7 +251,6 @@ void compare(const char *obsfile, const char *simfile) {
   sim->ReadFile(simfile, "jtime/D:cam/I:pmt:x/F:y");
   
 //   printf("obs entries: %ld; sim rays: %ld\n", obs->GetEntries(), sim->GetEntries());
-  
   double jstart = obs->GetMinimum("jtime");
   double jend = obs->GetMaximum("jtime");
   double dur_sec = (jend - jstart) * 86400.;
@@ -264,7 +281,7 @@ void compare(const char *obsfile, const char *simfile) {
   fillPmtCoords(pmtX, pmtY);
   calculateDistances(pmtX, pmtY, dist);
 
-  analyzeCentroids(simpmt, obspmt, "analyze-centroids.pdf");
+  analyzeCentroids(simpmt, obspmt, pdfname?pdfname:"analyze-centroids.pdf");
   
 
 
