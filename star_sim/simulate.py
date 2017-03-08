@@ -10,7 +10,7 @@ import re
 import sys
 from query_stellarium import query
 
-def _get_site_cam(filename):
+def get_site_cam(filename):
     m = re.findall('(?<=FDMEAN-[0-9]{8}-)([0-9]+)-([0-9a-f]+)(?=-calibrated.txt)', filename)
     if not len(m):
         return {'site': None, 'cam': None}
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.site is None or args.camera is None:
-        sitecam = _get_site_cam(args.filename)
+        sitecam = get_site_cam(args.filename)
     else:
         sitecam = {'site': args.site, 'cam': args.camera}
 
@@ -50,9 +50,9 @@ if __name__ == '__main__':
     print "Duration, start to finish, in seconds:", dur
     sim_params = query(jstart, args.name)
 
-    outfile = args.filename.replace('-calibrated', '-simulated')
+    outfile = os.path.basename(args.filename).replace('-calibrated', '-simulated')
     cmd = '$TRUMP/bin/star.run -rays 400 -dt 0.1 -q '
-    cmd += '-o {} '.format(outfile)
+    cmd += '-o output/simulation/{} '.format(outfile)
     cmd += '-geo {} -mir {} '.format(_geofile(sitecam['site']), sitecam['cam'])
     cmd += '-dur {} '.format(dur)
 

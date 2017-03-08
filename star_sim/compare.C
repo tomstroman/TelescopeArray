@@ -53,7 +53,7 @@ TCanvas *camFace(TGraph *box = NULL) {
   char canvname[64] = "camface";
   TCanvas *camface = (TCanvas*)gROOT->FindObject(canvname);
   if (!camface) {
-    camface = new TCanvas(canvname, "cam", 580 + 28, 505 + 4);
+    camface = new TCanvas(canvname, "cam", 580 + 4, 505 + 28);
   }
   if (!box) {
     box = new TGraph(5);
@@ -114,34 +114,51 @@ void analyzeCentroids(TH2F *simpmt, TProfile2D *obspmt, const char* pdfname = "c
   diffcentroid->SetName("diffcentroid");
   
   TGraph *dcenx = new TGraph(1);
-  dcenx->SetName("dcenx");
+  dcenx->SetName("dcenx");  
   dcenx->SetTitle("Centroid X: sim minus obs;UTC second;meters");
+  dcenx->SetMinimum(-0.1);
+  dcenx->SetMaximum(0.1);
 //   gDirectory->GetList()->Add(dcenx);
   TGraph *dceny = new TGraph(1);
   dceny->SetName("dceny");
   dceny->SetTitle("Centroid Y: sim minus obs;UTC second;meters");
+  dceny->SetMinimum(-0.1);
+  dceny->SetMaximum(0.1);
 //   gDirectory->GetList()->Add(dceny);
+  TGraph *dcenxy = new TGraph(1);
+  dcenxy->SetName("dcenxy");
+  dcenxy->SetTitle("Centroid positions: sim minus obs;meters;meters");
+  dcenxy->SetMinimum(-0.1);
+  dcenxy->SetMaximum(0.1);
+  
+  
   TGraph *dcenr = new TGraph(1);
   dcenr->SetName("dcenr");
   dcenr->SetTitle("Centroid distance between sim and obs;UTC second;meters");
+  dcenr->SetMinimum(0);
+  dcenr->SetMaximum(0.2);
 //   gDirectory->GetList()->Add(dcenr);
   TGraph *dcenf = new TGraph(1);
   dcenf->SetName("dcenf");
   dcenf->SetTitle("Centroid #phi: obs to sim;UTC second;degrees");
+  dcenf->SetMinimum(-180);
+  dcenf->SetMaximum(180);
 //   gDirectory->GetList()->Add(dcenf);
   
   TGraph *obslight = new TGraph(1);
   obslight->SetName("obslight");
   obslight->SetTitle("Total signal (observed);UTC second;signal (arbitrary units)");
+  obslight->SetMinimum(0);
   
   TGraph *simlight = new TGraph(1);
   simlight->SetName("simlight");
   simlight->SetTitle("Total signal (simulated);UTC second;signal (arbitrary units)");
+  simlight->SetMinimum(0);
   
   TGraph *simrms = new TGraph(1);
   simrms->SetName("simrms");
   simrms->SetTitle("Signal RMS width (simulated);UTC second;meters");
-  
+
   TGraph *obsrms = new TGraph(1);
   obsrms->SetName("obsrms");
   obsrms->SetTitle("Signal RMS width (observed);UTC second;meters");
@@ -257,6 +274,7 @@ void analyzeCentroids(TH2F *simpmt, TProfile2D *obspmt, const char* pdfname = "c
       diffcentroid->SetPoint(k, x-ox, y-oy, utc_sec);
       dcenx->SetPoint(k, utc_sec, x-ox);
       dceny->SetPoint(k, utc_sec, y-oy);
+      dcenxy->SetPoint(k, x-ox, y-oy);
       dcenr->SetPoint(k, utc_sec, TMath::Sqrt((x-ox)*(x-ox) + (y-oy)*(y-oy)));
       dcenf->SetPoint(k, utc_sec, TMath::ATan2(y-oy, x-ox) * TMath::RadToDeg());
       simrms->SetPoint(k, utc_sec, srms);
@@ -273,6 +291,19 @@ void analyzeCentroids(TH2F *simpmt, TProfile2D *obspmt, const char* pdfname = "c
   obscentroid->Draw("p");
   camface->Print(Form("%s(", pdfname), "pdf");
   camface->Close();
+  
+  TCanvas *csquare = new TCanvas("csquare", "csquare", 580+4, 580+28);
+  csquare->SetGrid();
+  TH2F *cenxy = new TH2F("cenxy","Centroid sim minus obs", 100, -0.1, 0.1, 100, -0.1, 0.1);
+  double px, py;
+  for (i=0; i<dcenxy->GetN(); i++) {
+    dcenxy->GetPoint(i, px, py);
+    cenxy->Fill(px, py);
+  }  
+  cenxy->Draw("col");
+  
+  csquare->Print(pdfname);
+  csquare->Close();
   
   TCanvas *c1 = new TCanvas("c1", "c1");
   dcenx->Draw("ap");
@@ -397,7 +428,7 @@ void compare(const char *obsfile, const char *simfile, const char *pdfname = NUL
 
   analyzeCentroids(simpmt, obspmt, pdfname?pdfname:"analyze-centroids.pdf");
   
-  animate(simpmt, obspmt);
+//   animate(simpmt, obspmt);
   
 
 
