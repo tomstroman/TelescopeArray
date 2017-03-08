@@ -104,7 +104,9 @@ def _call_timecorr(site, output_dir, daq_pref):
     Expected console output on success: None
     """
     cmd = '{} {} {} {}'.format(timecorr_exe, site, output_dir, daq_pref)
+    print cmd
     out, err = _command(cmd)
+    print 'command finished'
     assert not out
     assert not err
 
