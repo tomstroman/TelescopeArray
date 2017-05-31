@@ -23,10 +23,14 @@ localpoint: bin/localpoint.run
 RuntimeParameters *par;
 RayTrace *ray;
 
+double segDeflectAzDeg[18];
+double segDeflectAltDeg[18];
+
+
 // function prototypes
 void PrintUsage(char *name);
 void ParseCommandLine(int argc, char *argv[]);
-// void ReorientSegments(FDSiteGeometry *g, int mir, double banana_error, double seg_rcurve);
+void ReorientSegments(FDSiteGeometry *g, int mir);
 void runRayTrace(RuntimeParameters *par, FDSiteGeometry *fdsg, TGeom *tgeom, RayTrace *ray, FILE *out);
 
 
@@ -59,7 +63,7 @@ int main(int argc, char *argv[]) {
   par->siteid = fdsg->siteid;
   
   // Modify geometry according to command-line arguments
-//   ReorientSegments(fdsg);
+  ReorientSegments(fdsg, ray->cam);
   
   // Initialize variables necessary for ray-tracing
   UCalibration *calib = newInstanceOf(UCalibration);
@@ -193,7 +197,13 @@ void ParseCommandLine(int argc, char *argv[]) {
   
   par->ntry = DEFAULT_NRAYS;           // rays to trace, override with -rays
 
-  int i;
+  int i, j;
+  
+  for (j=0; j<18; j++) {
+    segDeflectAltDeg[j] = 0;
+    segDeflectAzDeg[j] = 0;
+  }
+  
   for (i=1; i<argc; i++) {
     if (strcmp(argv[i], "-geo") == 0) {
       sprintf(par->geometryFile, "%s", argv[++i]);
@@ -218,6 +228,12 @@ void ParseCommandLine(int argc, char *argv[]) {
     
     else if (strcmp(argv[i], "-dz") == 0) {
       ray->vsite[2] = NOMINAL_SCREEN_CENTER + atof(argv[++i]);
+    }
+    
+    else if (strcmp(argv[i], "-seg") == 0) {
+      j = atoi(argv[++i]);
+      segDeflectAzDeg[j] = atof(argv[++i]);
+      segDeflectAltDeg[j] = atof(argv[++i]);
     }
     
     else {
@@ -263,43 +279,35 @@ void PrintUsage (char *name) {
   fprintf(stderr, "  -rays <n>         Trace <n> rays from position (default: %d)\n", DEFAULT_NRAYS);
   fprintf(stderr, "  -xy <X> <Y>       Position of source is <X> meters LEFT of screen center, <Y> meters UP (defaults: 0, 0)\n");
   fprintf(stderr, "  -dz <Z>           Position of source is <Z> meters FARTHER from mirror THAN screen (default: 0)\n");
+  fprintf(stderr, "  -seg <S> <X> <Y>  Rotate segment <S> <X> degrees to the right, then <Y> degrees up\n");
 }
 
-// void ReorientSegments(FDSiteGeometry *g, int mir, double banana_error, double seg_rcurve) {
-/* Rebuild g->seg_center, based on geofd/src/getNewerVectors.c
- * banana_error is normally 0.098 (meters) for most even-numbered mirrors, 
- * and 0 for odd-numbered mirrors and BRM #04. Here we can specify a different
- * value to see the effect on the spot shape/size.
- * Default value for seg_rcurve is 6.058.
- */
-//   fprintf(stderr, "overriding mir %d with banana_error = %.3f m, seg_rcurve = %.3f m\n",
-//           mir, banana_error, seg_rcurve);
-//   int i, j;
-//   double seg_pos[3];
-//   double from_seg_ccurve[3];
-//   for (i=0; i<18; i++) {
-//     g->seg_rcurve[mir][i] = seg_rcurve;
-//     
-//     // get the position of the segment (surface center) relative to the mirror's
-//     // center of curvature. Equal to unit vector "vseg3" * distance "rcurve3"
-//     for (j=0; j<3; j++) {
-//       seg_pos[j] = g->vseg3[mir][i][j] * g->rcurve3[mir];
-//     }
-//     
-//     // the unit vector from seg_pos toward the center of segment curvature is parallel
-//     // to the unit vector from (seg_pos - banana_error) to the center of mirror curvature
-//     seg_pos[2] -= banana_error;
-//     
-//     unitVector(seg_pos, from_seg_ccurve);
-//     
-//     for (j=0; j<3; j++) {
-//       g->seg_center[mir][i][j] = seg_pos[j] - from_seg_ccurve[j] * g->seg_rcurve[mir][i];
-//     }
-//     
-//     // because seg_pos was shifted by banana_error in the z direction, remove that shift now
-//     g->seg_center[mir][i][2] += banana_error;
-//     fprintf(stderr, "Segment %d curvature center offset: %f %f %f; radius: %f\n",
-//             i, g->seg_center[mir][i][0], g->seg_center[mir][i][1], 
-//             g->seg_center[mir][i][2], g->seg_rcurve[mir][i]);
-//   }
-// }
+void ReorientSegments(FDSiteGeometry *g, int mir) {
+  int i, j;
+  double seg_pos[3]; // position of segment in mirror coordinates
+  double cen_curve_seg[3]; // position of segment curvature center FROM segment position
+  for (i=0; i<18; i++) {
+    if (segDeflectAzDeg[i] == 0 && segDeflectAltDeg[i] == 0)
+      continue;
+    
+    
+    for (j=0; j<3; j++) {
+      seg_pos[j] = g->vseg3[mir][i][j] * g->rcurve3[mir];
+      cen_curve_seg[j] = g->seg_center[mir][i][j] - seg_pos[j];
+    }
+    
+    // Camera coordinates: mirror looks along z-axis, x-axis points to the left, and y-axis points up
+    // (x and y tangent to camera face plane)
+    
+    // So a rotation to the "right" is a negative rotation about Y
+    // and a rotation up is a negative rotation about X
+    
+    // but rotx and roty functions rotate axes, not vectors, so cancel the negative.
+    roty(cen_curve_seg, segDeflectAzDeg[i]*D2R, cen_curve_seg);
+    rotx(cen_curve_seg, segDeflectAltDeg[i]*D2R, cen_curve_seg);
+    
+    for (j=0; j<3; j++) {
+      g->seg_center[mir][i][j] = seg_pos[j] + cen_curve_seg[j];
+    }
+  }
+}
