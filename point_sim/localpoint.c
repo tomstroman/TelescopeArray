@@ -25,12 +25,12 @@ RayTrace *ray;
 
 double segDeflectAzDeg[18];
 double segDeflectAltDeg[18];
-
+double segSpot[18];
 
 // function prototypes
 void PrintUsage(char *name);
 void ParseCommandLine(int argc, char *argv[]);
-void ReorientSegments(FDSiteGeometry *g, int mir);
+void ModifySegments(FDSiteGeometry *g, int mir);
 void runRayTrace(RuntimeParameters *par, FDSiteGeometry *fdsg, TGeom *tgeom, RayTrace *ray, FILE *out);
 
 
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
   par->siteid = fdsg->siteid;
   
   // Modify geometry according to command-line arguments
-  ReorientSegments(fdsg, ray->cam);
+  ModifySegments(fdsg, ray->cam);
   
   // Initialize variables necessary for ray-tracing
   UCalibration *calib = newInstanceOf(UCalibration);
@@ -198,10 +198,12 @@ void ParseCommandLine(int argc, char *argv[]) {
   par->ntry = DEFAULT_NRAYS;           // rays to trace, override with -rays
 
   int i, j;
+  double ssp;
   
   for (j=0; j<18; j++) {
     segDeflectAltDeg[j] = 0;
     segDeflectAzDeg[j] = 0;
+    segSpot[j] = -1;
   }
   
   for (i=1; i<argc; i++) {
@@ -236,6 +238,12 @@ void ParseCommandLine(int argc, char *argv[]) {
       segDeflectAltDeg[j] = atof(argv[++i]);
     }
     
+    else if (strcmp(argv[i], "-ssp") == 0) {
+      ssp = atof(argv[++i]);
+      for (j=0; j<18; j++) {
+        segSpot[j] = ssp;
+      }
+    }
     else {
       fprintf(stderr, "\nUnrecognized option : %s\n", argv[i]);
       PrintUsage(argv[0]);
@@ -280,13 +288,17 @@ void PrintUsage (char *name) {
   fprintf(stderr, "  -xy <X> <Y>       Position of source is <X> meters LEFT of screen center, <Y> meters UP (defaults: 0, 0)\n");
   fprintf(stderr, "  -dz <Z>           Position of source is <Z> meters FARTHER from mirror THAN screen (default: 0)\n");
   fprintf(stderr, "  -seg <S> <X> <Y>  Rotate segment <S> <X> degrees to the right, then <Y> degrees up\n");
+  fprintf(stderr, "  -ssp <W>          Set mirror spot-size parameter to <W> degrees\n");
 }
 
-void ReorientSegments(FDSiteGeometry *g, int mir) {
+void ModifySegments(FDSiteGeometry *g, int mir) {
   int i, j;
   double seg_pos[3]; // position of segment in mirror coordinates
   double cen_curve_seg[3]; // position of segment curvature center FROM segment position
   for (i=0; i<18; i++) {
+    if (segSpot[i] >= 0) {
+      g->seg_spot[mir][i] = segSpot[i];
+    }
     if (segDeflectAzDeg[i] == 0 && segDeflectAltDeg[i] == 0)
       continue;
     
