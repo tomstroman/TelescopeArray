@@ -1,3 +1,4 @@
+from services.stereo_run import StereoRun
 from utils import log
 import logging
 
@@ -8,18 +9,13 @@ def make_stereo_happen(console_mirror=False):
 
     logging.info("stereo happening now")
     logging.debug("Begin validating stereo arguments")
-    prepare_stereo_run()
-    stereo_run()
 
-    return
+    run = StereoRun()
+    run.prepare_stereo_run()
+    run.stereo_run()
 
-#TODO: move these out
-def prepare_stereo_run():
-    logging.warn("not yet implemented")
-
-def stereo_run():
-    logging.warn("not yet implemented")
+    return run
 
 if __name__ == '__main__':
-    make_stereo_happen(console_mirror=True)
+    run = make_stereo_happen(console_mirror=True)
 
