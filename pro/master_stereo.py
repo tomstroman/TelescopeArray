@@ -8,7 +8,6 @@ def make_stereo_happen(console_mirror=False):
         print 'Logging to', log_name
 
     logging.info("stereo happening now")
-    logging.debug("Begin validating stereo arguments")
 
     run = StereoRun()
     run.prepare_stereo_run()
