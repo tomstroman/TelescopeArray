@@ -1,4 +1,4 @@
-# utils.py
+# utils/__init__.py
 # Thomas Stroman, University of Utah, 2016-12-15
 # Utilities for use in several functions/modules.
 
@@ -57,3 +57,4 @@ def get_jstart(timecorr, trig=None):
     jtrig = datetime.datetime(year, month, day, hh, mm, ss, mus)
 
     return (jtrig - j0).total_seconds()/86400.
+
