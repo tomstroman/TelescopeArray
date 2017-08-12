@@ -15,6 +15,7 @@ class StereoRun(object):
         db_path = os.path.join(self.rootpath, MASTER_DB_NAME)
         if not os.path.exists(db_path):
             logging.error("No database exists at %s", db_path)
+# TODO: prompt user to create
             raise Exception("Database not found")
 
         self.db = DatabaseWrapper(db_path)
