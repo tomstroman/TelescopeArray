@@ -34,5 +34,11 @@ stereo_run_tables = [
 
     ('FDPlaneConfigs', 'name TEXT PRIMARY KEY, path TEXT, calibration TEXT REFERENCES Calibrations, geometryset TEXT REFERENCES GeometrySets'),
 
-    ('StereoRuns', 'name TEXT, path TEXT, fdplaneconfig TEXT REFERENCES FDPlaneConfigs, model TEXT REFERENCES Models, source TEXT'),
+    ('StereoRuns', 'name TEXT PRIMARY KEY, path TEXT, fdplaneconfig TEXT REFERENCES FDPlaneConfigs, model TEXT REFERENCES Models'),
+
+    ('MCStereoRuns', 'name TEXT, stereorun TEXT REFERENCES StereoRuns, species INTEGER REFERENCES Species, PRIMARY KEY (stereorun, name)'),
+
+    ('DataStereoRuns', 'name TEXT DEFAULT "nature", stereorun TEXT REFERENCES StereoRuns, PRIMARY KEY (stereorun, name)'),
+
+    ('Showlibs', 'model TEXT REFERENCES Models, species INTEGER REFERENCES Species, dstfile TEXT PRIMARY KEY'),
 ]

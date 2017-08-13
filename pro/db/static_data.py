@@ -57,3 +57,18 @@ species = (
 )
 table_data['Species'] = species
 
+# ('Showlibs', 'model TEXT REFERENCES Models, species INTEGER REFERENCES Species, dstfile TEXT PRIMARY KEY')
+showlibs = (
+    ('qgsjet01c', 14, 'tas-qgsjet01c-prot.dst.gz'),
+    ('qgsjet01c', 5626, 'tas-qgsjet01c-iron.dst.gz'),
+    ('qgsjetii-03', 14, 'tas-qgsjetii-03-prot.dst.gz'),
+    ('qgsjetii-03', 5626, 'tas-qgsjetii-03-iron.dst.gz'),
+    ('qgsjetii-04', 14, 'tas-qgsjetii-04-prot.dst.gz'),
+    ('qgsjetii-04', 5626, 'tas-qgsjetii-04-iron.dst.gz'),
+    ('sibyll', 14, 'tas-sibyll-prot.dst.gz'),
+    ('sibyll', 5626, 'tas-sibyll-iron.dst.gz'),
+    ('epos-lhc', 14, 'tas-epos-lhc-prot.dst.gz'),
+    ('epos-lhc', 5626, 'tas-epos-lhc-iron.dst.gz'),
+)
+table_data['Showlibs'] = showlibs
+
