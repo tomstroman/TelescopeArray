@@ -27,6 +27,7 @@ class StereoRun(object):
 
     def prepare_stereo_run(self):
         logging.warn("method not yet implemented")
+        self.base_run = self._find_or_create_base_run()
         logging.info("TODO: get global info from db")
         logging.info("TODO: validate parameters")
         logging.info("TODO: prepare paths")
@@ -36,6 +37,18 @@ class StereoRun(object):
 
     def stereo_run(self):
         logging.warn("method not yet implemented")
+
+    def _find_or_create_base_run(self):
+        sql = 'SELECT name, path FROM StereoRuns WHERE fdplaneconfig=\"{0}\" AND model=\"{1}\"'.format(
+                self.params.fdplane_config,
+                self.params.model,
+        )
+        logging.debug('sql: %s', sql)
+        runs = self.db.retrieve(sql)
+        for name, path in runs:
+            logging.info('found base StereoRun %s at path %s', name, path)
+        if len(runs) == 0:
+            logging.info('No base StereoRuns found')
 
 class StereoRunParams(object):
     def __init__(self, db, is_mc=True, fdplane_config='joint_cal1.4', geometry=None, 
