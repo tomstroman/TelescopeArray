@@ -3,6 +3,7 @@ from db.database_wrapper import DatabaseWrapper
 from services.stereo_run_params import StereoRunParams
 import logging
 import os
+import subprocess as sp
 
 MASTER_DB_NAME = 'stereo_runs.db'
 
@@ -30,8 +31,8 @@ class StereoRun(object):
     def prepare_stereo_run(self):
         logging.warn("method not yet implemented")
         self.base_run = self._find_or_create_base_run(self.name)
-        logging.info("TODO: get global info from db")
-        logging.info("TODO: validate parameters")
+
+        self._validate_directory_structure()
         logging.info("TODO: prepare paths")
         logging.info("TODO: compile executables")
         logging.info("TODO: prepare templates from meta-templates")
@@ -83,7 +84,33 @@ class StereoRun(object):
             self.db.insert_row('INSERT INTO StereoRuns VALUES(?, ?, ?, ?)',
                 (supplied_name, path, self.params.fdplane_config, self.params.model)
             )
+            self._create_directory_structure(path)
             return path
         except Exception as err:
             logging.error('Failed to create StereoRun. Error: %s', err)
+
+    def _validate_directory_structure(self):
+        self.full_path = os.path.join(self.rootpath, self.base_run)
+        logging.debug('Full path to base StereoRun: %s', self.full_path)
+        assert os.path.isdir(self.full_path)
+        self.bin_path = os.path.join(self.full_path, 'bin')
+        assert os.path.isdir(self.bin_path)
+
+    def _create_directory_structure(self, path=None):
+        base_run = path if path is not None else self.base_run
+        full_path = os.path.join(self.rootpath, base_run)
+        bin_path = os.path.join(full_path, 'bin')
+        for path in [full_path, bin_path]:
+            cmd = 'mkdir -p {}'.format(path)
+            logging.info('Creating %s', path)
+            logging.debug('cmd: %s', cmd)
+            try:
+                output = sp.check_output(cmd.split(), stderr=sp.STDOUT)
+                logging.debug('output: %s', output)
+            except Exception as err:
+                logging.error("Exception during directory creation: %s", err)
+                raise
+            if output:
+                raise Exception('Unexpected stdout/stderr')
+
 
