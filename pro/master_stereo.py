@@ -1,5 +1,6 @@
 from services.stereo_run import StereoRun
 from utils import log
+import argparse
 import logging
 
 def make_stereo_happen(console_mirror=False, name=None):
@@ -16,5 +17,8 @@ def make_stereo_happen(console_mirror=False, name=None):
     return run
 
 if __name__ == '__main__':
-    run = make_stereo_happen(console_mirror=True, name='foo')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n', '--name', default='test')
+    args = parser.parse_args()
+    run = make_stereo_happen(console_mirror=True, name=args.name)
 
