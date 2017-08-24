@@ -31,9 +31,9 @@ class StereoRun(object):
     def prepare_stereo_run(self):
         logging.warn("method not yet implemented")
         self.base_run = self._find_or_create_base_run(self.name)
+        self.specific_run = self._find_or_create_specific_run()
 
-        self._validate_directory_structure()
-        logging.info("TODO: prepare paths")
+        self._create_directory_structure(self.base_run)
         logging.info("TODO: compile executables")
         logging.info("TODO: prepare templates from meta-templates")
         logging.info("TODO: generate plan for run, report to user")
@@ -46,6 +46,7 @@ class StereoRun(object):
         Find any StereoRun(s) matching the simulation *parameters* (FDPlaneConfig and Model),
         and check against the supplied name, otherwise attempt to create one.
         """
+        assert self.params
         sql = 'SELECT name, path FROM StereoRuns WHERE fdplaneconfig=\"{0}\" AND model=\"{1}\"'.format(
                 self.params.fdplane_config,
                 self.params.model,
@@ -84,25 +85,47 @@ class StereoRun(object):
             self.db.insert_row('INSERT INTO StereoRuns VALUES(?, ?, ?, ?)',
                 (supplied_name, path, self.params.fdplane_config, self.params.model)
             )
-            self._create_directory_structure(path)
             return path
         except Exception as err:
             logging.error('Failed to create StereoRun. Error: %s', err)
 
-    def _validate_directory_structure(self):
-        self.full_path = os.path.join(self.rootpath, self.base_run)
-        logging.debug('Full path to base StereoRun: %s', self.full_path)
-        assert os.path.isdir(self.full_path)
-        self.bin_path = os.path.join(self.full_path, 'bin')
-        assert os.path.isdir(self.bin_path)
+    def _find_or_create_specific_run(self):
+        assert self.base_run
+
+        run_name = self.params.name
+        is_mc = self.params.is_mc
+        if is_mc:
+            sql = 'SELECT name, species FROM MCStereoRuns WHERE stereorun_path=\"{0}\"'.format(self.base_run)
+        else:
+            sql = 'SELECT name FROM DataStereoRuns WHERE stereorun_path=\"{0}\"'.format(self.base_run)
+        logging.debug('sql: %s', sql)
+
+        matching_runs = self.db.retrieve(sql)
+        for row in matching_runs:
+            if row[0] == run_name:
+                logging.info('Found a matching specific run for %s', run_name)
+                return run_name
+
+        logging.info('No matching specific runs found. Attempting to create %s with is_mc=%s', run_name, is_mc)
+        try:
+            if is_mc:
+                self.db.insert_row('INSERT INTO MCStereoRuns VALUES(?, ?, ?)', (run_name, self.base_run, self.params.species))
+            else:
+                self.db.insert_row('INSERT INTO DataStereoRuns VALUES(?, ?)', (run_name, self.base_run))
+            return run_name
+        except Exception as err:
+            logging.error('Failed to create specific run. Error: %s', err)
+
 
     def _create_directory_structure(self, path=None):
         base_run = path if path is not None else self.base_run
         full_path = os.path.join(self.rootpath, base_run)
-        bin_path = os.path.join(full_path, 'bin')
-        for path in [full_path, bin_path]:
+        self.bin_path = os.path.join(full_path, 'bin')
+        self.run_path = os.path.join(full_path, self.specific_run)
+        self.src_path = os.path.join(full_path, 'src')
+        for path in [full_path, self.bin_path, self.run_path, self.src_path]:
             cmd = 'mkdir -p {}'.format(path)
-            logging.info('Creating %s', path)
+            logging.info('Verifying path exists: %s', path)
             logging.debug('cmd: %s', cmd)
             try:
                 output = sp.check_output(cmd.split(), stderr=sp.STDOUT)
@@ -112,5 +135,15 @@ class StereoRun(object):
                 raise
             if output:
                 raise Exception('Unexpected stdout/stderr')
+            assert os.path.isdir(path)
 
+    def _compile_executables(self):
+        base_reqs = {
+            'trump': 'trump.run',
+            'fdtp':  'fdtubeprofile.run',
+            'stpfl': 'stpfl12_main',
+            'dump_tuples': 'dumpst.run',
+            'dump_profs' : 'dumpster2.run',
+            'dump_meta'  : 'dumpst-rootformat.txt',
+        }
 
