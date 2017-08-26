@@ -1,5 +1,6 @@
 from db import stereo_run_db
 from db.database_wrapper import DatabaseWrapper
+from services import executables
 from services.stereo_run_params import StereoRunParams
 import logging
 import os
@@ -34,7 +35,7 @@ class StereoRun(object):
         self.specific_run = self._find_or_create_specific_run()
 
         self._create_directory_structure(self.base_run)
-        logging.info("TODO: compile executables")
+        self._compile_executables()
         logging.info("TODO: prepare templates from meta-templates")
         logging.info("TODO: generate plan for run, report to user")
 
@@ -138,12 +139,9 @@ class StereoRun(object):
             assert os.path.isdir(path)
 
     def _compile_executables(self):
-        base_reqs = {
-            'trump': 'trump.run',
-            'fdtp':  'fdtubeprofile.run',
-            'stpfl': 'stpfl12_main',
-            'dump_tuples': 'dumpst.run',
-            'dump_profs' : 'dumpster2.run',
-            'dump_meta'  : 'dumpst-rootformat.txt',
-        }
-
+        for key, value in executables.base_reqs.items():
+            exe = os.path.join(self.bin_path, value)
+            if os.path.exists(exe):
+                logging.debug('found %s', exe)
+            else:
+                executables.prepare_executable(key, value, src_dir=self.src_path)
