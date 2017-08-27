@@ -24,7 +24,10 @@ save_files = {
 def prepare_executable(name, destination, src_dir=None):
     assert name in base_reqs.keys()
     logging.info('compiling %s and copying to %s', name, destination)
-    cmd = 'touch {}'.format(destination)
+    if name in compiler_map:
+        compiler_map[name]()
+    else:
+        cmd = 'touch {}'.format(destination)
     output = sp.check_output(cmd.split(), stderr=sp.STDOUT)
 
     if src_dir is not None and name in save_files:
@@ -40,3 +43,24 @@ def prepare_executable(name, destination, src_dir=None):
             cmd = 'cp {} {}'.format(src, dest)
             sp.check_output(cmd.split())
             assert os.path.exists(dest)
+
+def compile_trump(dedx_model=13):
+    cwd = save_files['trump']['base']
+    change = os.path.join(cwd, 'inc', 'constants.h')
+    original = change + '.original'
+
+    cmd = 'cp {} {}'.format(change, original)
+    sp.check_output(cmd.split(), stderr=sp.STDOUT)
+
+    cmd_shell = ['make realclean']
+    sp.check_output(cmd_shell, shell=True, stderr=sp.STDOUT, cwd=cwd)
+
+    cmd_shell = ['make']
+    sp.check_output(cmd_shell, shell=True, stderr=sp.STDOUT, cwd=cwd)
+
+    cmd = 'mv {} {}'.format(original, change)
+    sp.check_output(cmd.split(), stderr=sp.STDOUT)
+
+compiler_map = {
+    'trump': compile_trump
+}
