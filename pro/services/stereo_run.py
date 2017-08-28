@@ -36,7 +36,7 @@ class StereoRun(object):
 
         self._create_directory_structure(self.base_run)
         self._compile_executables()
-        logging.info("TODO: prepare templates from meta-templates")
+        self._build_templates()
         logging.info("TODO: generate plan for run, report to user")
 
     def stereo_run(self):
@@ -146,3 +146,7 @@ class StereoRun(object):
             else:
                 logging.debug('did not find %s', exe)
                 executables.prepare_executable(self, prog, exe, src_dir=self.src_path)
+
+    def _build_templates(self):
+        logging.info('creating templates')
+        meta_template = 'foo'
