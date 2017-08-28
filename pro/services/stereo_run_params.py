@@ -18,6 +18,7 @@ class StereoRunParams(object):
             logging.warn("using geometry=%s but fdplane_config %s uses geometry=%s", self.geometry, vconfig, vgeo)
 
         self.model = model or self._pick_model()
+        self.dedx_model = self.db.retrieve('SELECT dedx_model FROM Models where name="{}"'.format(self.model))[0][0]
 
         self.is_mc = is_mc
         if self.is_mc:
