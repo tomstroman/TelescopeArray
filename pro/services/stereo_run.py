@@ -2,6 +2,7 @@ from db import stereo_run_db
 from db.database_wrapper import DatabaseWrapper
 from services import executables
 from services.stereo_run_params import StereoRunParams
+from services.templates import trump_conf
 import logging
 import os
 import subprocess as sp
@@ -15,6 +16,11 @@ class StereoRun(object):
         if not self.rootpath:
             logging.error("TAFD_STEREO_ROOT variable not set.")
             raise Exception("TAFD_STEREO_ROOT variable not set.")
+
+        self.rtdata = os.getenv('RTDATA')
+        if not self.rtdata:
+            logging.error("RTDATA variable not set.")
+            raise Exception("RTDATA variable not set.")
 
         db_path = os.path.join(self.rootpath, MASTER_DB_NAME)
         if not os.path.exists(db_path):
@@ -149,4 +155,34 @@ class StereoRun(object):
 
     def _build_templates(self):
         logging.info('creating templates')
-        meta_template = 'foo'
+
+        showlib = self.db.retrieve('SELECT dstfile FROM Showlibs WHERE model=\"{0}\" AND species={1}'.format(
+            self.params.model,
+            self.params.species,
+        ))[0][0]
+
+        replacements = trump_conf.standard_replacements
+        replacements.update({
+            '_META_REPLACE_GEOCAL_'  : self.name,
+            '_META_REPLACE_MODEL_'   : self.params.model,
+            '_META_REPLACE_SOURCE_'  : self.specific_run,
+            '_META_REPLACE_GEOFILE_' : os.path.join(
+                self.rtdata,
+                'fdgeom',
+                'geoREPLACE_GEO_{}.dst.gz'.format(self.params.geometry),
+            ),
+            '_META_REPLACE_SPECIES_' : str(self.params.species),
+            '_META_REPLACE_SHOWLIB_' : os.path.join(self.rtdata, 'showlib', showlib),
+            '_META_REPLACE_DTIME_'   : str(self.params.dtime),
+        })
+
+        meta_template = trump_conf.conf_meta_template
+        for key, value in replacements.items():
+            logging.debug('Replacing %s with %s', key, value)
+            meta_template = meta_template.replace(key, value)
+
+        assert '_META_REPLACE_' not in meta_template
+
+        template = os.path.join(self.run_path, trump_conf.standard_template_name)
+        with open(template, 'w') as template_file:
+            template_file.write(meta_template)
