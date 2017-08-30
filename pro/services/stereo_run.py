@@ -130,7 +130,13 @@ class StereoRun(object):
         self.bin_path = os.path.join(full_path, 'bin')
         self.run_path = os.path.join(full_path, self.specific_run)
         self.src_path = os.path.join(full_path, 'src')
-        for path in [full_path, self.bin_path, self.run_path, self.src_path]:
+        self.log_path = None
+        paths = [full_path, self.bin_path, self.run_path, self.src_path]
+        if self.params.is_mc:
+            self.log_path = os.path.join(self.run_path, 'logs')
+            paths.append(self.log_path)
+
+        for path in paths:
             cmd = 'mkdir -p {}'.format(path)
             logging.info('Verifying path exists: %s', path)
             logging.debug('cmd: %s', cmd)
