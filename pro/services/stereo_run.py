@@ -2,7 +2,7 @@ from db import stereo_run_db
 from db.database_wrapper import DatabaseWrapper
 from services import executables
 from services.stereo_run_params import StereoRunParams
-from services.templates import trump_conf
+from services.templates import trump_conf, stereo_py
 import logging
 import os
 import subprocess as sp
@@ -192,3 +192,5 @@ class StereoRun(object):
         template = os.path.join(self.run_path, trump_conf.standard_template_name)
         with open(template, 'w') as template_file:
             template_file.write(meta_template)
+
+        stereo_py.build_stereo_py()
