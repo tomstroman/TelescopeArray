@@ -912,28 +912,11 @@ target = os.path.abspath(sys.argv[1])
 
 
 ## set up
-#tpname = 'ghdef'
-#tpname = 'width0'
-#tpname = 'width1'
-#tpname = 'ghl70x100'
-tpname = 'ghl70x60'
-#tpname = 'ghl60x60'
-#tpname = 'ghl56x150'
-#tpname = 'ghl60'
-#mdname = 'mddef'
-#mdname = 'mdghd'
-#mdname = 'mdghd2'
-#mdname = 'mdghd'
-#mdname = 'mdghl70x100'
-mdname = 'mdghl70x60'
-#mdname = 'mdghl60x60'
-#mdname = 'mdghl56x150'
-#mdname = 'mdghl60'
+tpname = '_META_REPLACE_TPNAME_'
+mdname = '_META_REPLACE_MDNAME_'
 
-#atmos = '$RTDATA/atmosphere/atmosParamTypicalDSTBank.dst.gz'
-atmos = '$RTDATA/atmosphere/gdas.dst.gz'
-#dumprevision = 1
-dumprevision = '2d'
+atmos = '_META_REPLACE_ATMOS_'
+dumprevision = '_META_REPLACE_DUMPREVISION_'
 rawindex = 1
 sitename = ['black-rock','long-ridge','middle-drum']
 stereoCoincidenceWindow = 0.002 # 2 milliseconds
@@ -945,19 +928,19 @@ nps = ['lm','bm','bl','blm']
 psites = ( {'lm': ['lr','md'],'bm': ['br','md'],
     'bl': ['br','lr'],'blm': ['br','lr','md']} )
 planebank = {'br': 'BRPLANE', 'lr': 'LRPLANE', 'md': 'FDPLANE'}
-stereoRoot = '/scratch/tstroman/stereo'
+stereoRoot = '_META_REPLACE_STEREOROOT_'
 
 
-fdplaneDataDir = '/scratch/tstroman/mono/fdplane_cal1.4_joint_20141014'
-geo = ( ['$RTDATA/fdgeom/geobr_joint.dst.gz',
-         '$RTDATA/fdgeom/geolr_joint.dst.gz',
-         '$RTDATA/fdgeom/geomd_20131002.dst.gz'] )
+fdplaneDataDir = '_META_REPLACE_FDPLANEDATADIR_'
+geo = ( ['_META_REPLACE_GEOBR_',
+         '_META_REPLACE_GEOLR_',
+         '_META_REPLACE_GEOMD_'] )
 dumpbanks = { 'bl': '-brplane -lrplane',
               'bm': '-brplane -fdplane',
               'lm': '-lrplane -fdplane'}         
 
 caldir = os.getenv('RTDATA') + '/calibration/cal_1.4'
-fdpedpath = '/scratch1/fdpedv'
+fdpedpath = '_META_REPLACE_FDPED_'
 altfdpedpath = caldir + '/fdped'              
 
 tahome = os.getenv('TAHOME')
