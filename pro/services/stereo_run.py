@@ -34,6 +34,8 @@ class StereoRun(object):
         self.params = StereoRunParams(self.db)
         logging.info("Parameters object: %s", self.params)
         self.name = name
+        self.recon = 'mdghl70x60' # hard-coded for now
+        self.mdrecon = 'md' + self.recon # hard-coded for now
 
     def prepare_stereo_run(self):
         logging.warn("method not yet implemented")
@@ -193,4 +195,14 @@ class StereoRun(object):
         with open(template, 'w') as template_file:
             template_file.write(meta_template)
 
-        stereo_py.build_stereo_py()
+        stereo_dot_py = os.path.join(os.getenv('TAHOME'), 'processFD', 'stereo.py')
+        replacements = {
+            '_META_REPLACE_TPNAME_' : self.recon,
+            '_META_REPLACE_MDNAME_' : self.mdrecon,
+            '_META_REPLACE_STEREOROOT_' : self.rootpath,
+        }
+
+#TODO: put stereo.py in self.bin_path, but need to modify intermediate code first
+        contents = stereo_py.build_stereo_py(new_replacements=replacements)
+        with open(stereo_dot_py, 'w') as stpyfile:
+            stpyfile.write(contents)

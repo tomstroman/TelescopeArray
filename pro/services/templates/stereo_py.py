@@ -1,3 +1,4 @@
+import copy
 import logging
 import os
 
@@ -20,7 +21,15 @@ standard_replacements = {
 }
 
 
-def build_stereo_py():
+def build_stereo_py(new_replacements=None):
     with open(meta_template_file, 'r') as meta_template_in:
         meta_template = meta_template_in.read()
-    logging.info('%s contains %s newlines', meta_template_file, meta_template.count('\n'))
+
+    replacements = copy.deepcopy(standard_replacements)
+    if new_replacements is not None:
+        replacements.update(new_replacements)
+
+    for placeholder, replacement in replacements.items():
+        meta_template = meta_template.replace(placeholder, replacement)
+
+    return meta_template
