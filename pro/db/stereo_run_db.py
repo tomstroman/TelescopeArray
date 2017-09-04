@@ -1,9 +1,8 @@
 # stereo_run_db.py
 # Thomas Stroman, University of Utah, 2017-08-12
 # Manage stereo simulation and analysis metadata for Telescope Array.
-
-from db.static_data import table_data
-from db.tables import stereo_run_tables
+from static_data import table_data
+from tables import stereo_run_tables
 
 import logging
 import json
