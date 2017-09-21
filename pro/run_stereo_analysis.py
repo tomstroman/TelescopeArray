@@ -3,13 +3,18 @@
 # Main supervisory executable for an entire stereo analysis.
 # TODO: Documentation!
 import logging
-from db.database_wrapper import DatabaseWrapper
 import os
+import shutil
+import subprocess
+
+from datetime import datetime
+from glob import glob
+
+from db.database_wrapper import DatabaseWrapper
+from prep_fadc.raw_to_dst import _command
 from process_night import process_night
 from step import steps
-from prep_fadc.raw_to_dst import _command
-from datetime import datetime
-import subprocess
+from stereo import simulation
 
 event_interval = 5.0 # average seconds between events
 # TODO: use database for these
@@ -23,7 +28,6 @@ temp_properties = {'DTIME': str(event_interval),
 
 ignorable_night_reasons = ['no TRUMP conf found', 'analysis complete']
 
-from stereo import simulation
 
 mosq_poll_interval = 15 # seconds
 def _get_mosix_jobs():
@@ -196,8 +200,6 @@ def erase_stereo(nights, params):
     Given a list of nights -- e.g., all with a particular status --
     remove stereo processing of those nights from the analysis.
     """
-    from glob import glob
-    import shutil
     if isinstance(nights, int):
        nights = [nights]
     path = params['path']
@@ -219,7 +221,3 @@ def erase_stereo(nights, params):
 if __name__ == '__main__':
     date_status, params = run()
     status_dates = report(date_status)
-
-
-
-
