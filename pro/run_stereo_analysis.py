@@ -11,12 +11,6 @@ from prep_fadc.raw_to_dst import _command
 from datetime import datetime
 import subprocess
 
-# hard-code these here, for now:
-model = 'qgsjetii-03'
-#source = 'mc-proton'
-source = 'nature'
-#source = 'mc-iron0'
-
 event_interval = 5.0 # average seconds between events
 # TODO: use database for these
 temp_properties = {'DTIME': str(event_interval),
@@ -53,7 +47,7 @@ def _get_mosix_jobs():
 def _modelsource(model, source):
     return ''.join([i for i in model+source if i.isalnum()])
 
-def _setup_run_get_dates(analysis_db, modelsource):
+def _setup_run_get_dates(analysis_db, modelsource, model, source):
     properties = {name: value for name, value in analysis_db.retrieve("SELECT name, value FROM Properties")}
     print "Analysis properties retrieved from database:"
     print properties
@@ -119,8 +113,10 @@ def _setup_run_get_dates(analysis_db, modelsource):
     return date_status, params
 
 
-def run(dbfile='db/tafd_analysis.db'):
+def run(stereo_run, dbfile='db/tafd_analysis.db'):
     # Initialization
+    model = stereo_run.params.model
+    source = stereo_run.specific_run
     modelsource = _modelsource(model, source)    
     print """
     **** run_stereo_analysis ****
@@ -129,14 +125,14 @@ def run(dbfile='db/tafd_analysis.db'):
     **** DB: {2}
     """.format(model, source, dbfile)
 
-    logging.warn("In run_stereo_analysis - and exiting!")
-    return
 
     analysis_db = DatabaseWrapper(dbfile)
 
-    date_status, params = _setup_run_get_dates(analysis_db, modelsource)
+    date_status, params = _setup_run_get_dates(analysis_db, modelsource, model, source)
     mosq_age = datetime.utcnow()
 
+    logging.warn("In run_stereo_analysis - and exiting!")
+    return
     #dates = dates[-3:]
     #dates = dates[:3]
     #dates = [20160206, 20160207]

@@ -78,7 +78,7 @@ class StereoRun(object):
 
     def stereo_run(self):
         logging.warn("method not yet implemented")
-        run_stereo_analysis.run()
+        run_stereo_analysis.run(self)
 
     def _create_directory_structure(self, path=None):
         base_run = path if path is not None else self.base_run
