@@ -83,6 +83,7 @@ class StereoRun(object):
     def _create_directory_structure(self, path=None):
         base_run = path if path is not None else self.base_run
         full_path = os.path.join(self.rootpath, base_run)
+        self.base_path = full_path
         self.bin_path = os.path.join(full_path, 'bin')
         self.run_path = os.path.join(full_path, self.specific_run)
         self.src_path = os.path.join(full_path, 'src')

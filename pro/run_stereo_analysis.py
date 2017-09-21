@@ -11,6 +11,7 @@ from datetime import datetime
 from glob import glob
 
 from db.database_wrapper import DatabaseWrapper
+from db import tafd_analysis
 from prep_fadc.raw_to_dst import _command
 from process_night import process_night
 from step import steps
@@ -122,6 +123,21 @@ def run(stereo_run, dbfile='db/tafd_analysis.db'):
     model = stereo_run.params.model
     source = stereo_run.specific_run
     modelsource = _modelsource(model, source)    
+    dbfile = os.path.join(stereo_run.base_path, 'tafd_analysis.db')
+    if not os.path.exists(dbfile):
+        data_path = os.path.join(stereo_run.rootpath, stereo_run.params.fdplane_config, 'tafd-data')
+        base_properties = (
+            ('ROOTPATH', stereo_run.rootpath),
+            ('ANALYSIS', stereo_run.name),
+            ('DESCRIPTION', 'GDAS atmosphere, "joint" geometry, calibration 1.4, correct molecular atmosphere lookup'),
+            ('DATAPATH', data_path),
+        )
+
+        tafd_analysis.init(
+            dbfile=dbfile,
+            properties=base_properties,
+        )
+
     print """
     **** run_stereo_analysis ****
     **** model: {0}
