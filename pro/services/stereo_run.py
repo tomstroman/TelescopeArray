@@ -18,20 +18,13 @@ class StereoRun(object):
 
         self._import_environment()
 
-        db_path = os.path.join(self.rootpath, MASTER_DB_NAME)
-        if not os.path.exists(db_path):
-            stereo_run_db.initialize(db_path)
+        self._prepare_database()
 
-#            logging.error("No database exists at %s", db_path)
-# TODO: prompt user to create
-#            raise Exception("Database not found")
-
-        self.db = DatabaseWrapper(db_path)
         self.params = StereoRunParams(self.db)
         logging.info("Parameters object: %s", self.params)
-        self.name = name
-        self.recon = 'mdghl70x60' # hard-coded for now
-        self.mdrecon = 'md' + self.recon # hard-coded for now
+
+# TODO: replace this function with runtime arguments
+        self._set_hardcoded_variables(name=name)
 
     def _import_environment(self):
         vars = [
@@ -49,6 +42,26 @@ class StereoRun(object):
 
         if not is_valid_environment:
             raise Exception("Missing expected environment variable(s)")
+
+    def _prepare_database(self):
+        db_path = os.path.join(self.rootpath, MASTER_DB_NAME)
+        if not os.path.exists(db_path):
+            stereo_run_db.initialize(db_path)
+
+#            logging.error("No database exists at %s", db_path)
+# TODO: prompt user to create
+#            raise Exception("Database not found")
+
+        self.db = DatabaseWrapper(db_path)
+
+    def _set_hardcoded_variables(self, name, recon='ghl70x60'):
+        vars = [
+            ('name', name),
+            ('recon', recon),
+            ('mdrecon', 'md' + recon),
+        ]
+        for attr, value in vars:
+            setattr(self, attr, value)
 
     def prepare_stereo_run(self):
         logging.warn("method not yet implemented")
