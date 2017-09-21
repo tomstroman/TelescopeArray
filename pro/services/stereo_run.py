@@ -1,26 +1,22 @@
+import logging
+import os
+import subprocess as sp
+
 from db import stereo_run_db
 from db.database_wrapper import DatabaseWrapper
 from services import executables
 from services.stereo_run_params import StereoRunParams
 from services.templates import trump_conf, stereo_py
-import logging
-import os
-import subprocess as sp
+
+import run_stereo_analysis
 
 MASTER_DB_NAME = 'stereo_runs.db'
 
 class StereoRun(object):
     def __init__(self, name=None):
         logging.debug("setting up StereoRun")
-        self.rootpath = os.getenv('TAFD_STEREO_ROOT')
-        if not self.rootpath:
-            logging.error("TAFD_STEREO_ROOT variable not set.")
-            raise Exception("TAFD_STEREO_ROOT variable not set.")
 
-        self.rtdata = os.getenv('RTDATA')
-        if not self.rtdata:
-            logging.error("RTDATA variable not set.")
-            raise Exception("RTDATA variable not set.")
+        self._import_environment()
 
         db_path = os.path.join(self.rootpath, MASTER_DB_NAME)
         if not os.path.exists(db_path):
@@ -36,6 +32,23 @@ class StereoRun(object):
         self.name = name
         self.recon = 'mdghl70x60' # hard-coded for now
         self.mdrecon = 'md' + self.recon # hard-coded for now
+
+    def _import_environment(self):
+        vars = [
+            ('rootpath', 'TAFD_STEREO_ROOT'),
+            ('rtdata', 'RTDATA'),
+        ]
+
+        is_valid_environment = True
+
+        for attr, env in vars:
+            setattr(self, attr, os.getenv(env))
+            if not getattr(self, attr):
+                is_valid_environment = False
+                logging.error("%s variable not set.", env)
+
+        if not is_valid_environment:
+            raise Exception("Missing expected environment variable(s)")
 
     def prepare_stereo_run(self):
         logging.warn("method not yet implemented")

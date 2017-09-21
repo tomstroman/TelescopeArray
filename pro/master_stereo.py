@@ -1,7 +1,8 @@
-from services.stereo_run import StereoRun
-from utils import log
 import argparse
 import logging
+
+from services.stereo_run import StereoRun
+from utils import log
 
 def make_stereo_happen(console_mirror=False, name=None):
     log_name = log.set_up_log(console_mirror=console_mirror)
