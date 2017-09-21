@@ -13,6 +13,12 @@ import run_stereo_analysis
 
 MASTER_DB_NAME = 'stereo_runs.db'
 
+ENV_VARS == [
+    ('rootpath', 'TAFD_STEREO_ROOT'),
+    ('rtdata', 'RTDATA'),
+]
+
+
 class StereoRun(object):
     def __init__(self, name=None):
         logging.debug("setting up StereoRun")
@@ -28,14 +34,9 @@ class StereoRun(object):
         self._set_hardcoded_variables(name=name)
 
     def _import_environment(self):
-        vars = [
-            ('rootpath', 'TAFD_STEREO_ROOT'),
-            ('rtdata', 'RTDATA'),
-        ]
-
         is_valid_environment = True
 
-        for attr, env in vars:
+        for attr, env in ENV_VARS:
             setattr(self, attr, os.getenv(env))
             if not getattr(self, attr):
                 is_valid_environment = False
@@ -85,6 +86,7 @@ class StereoRun(object):
         self.run_path = os.path.join(full_path, self.specific_run)
         self.src_path = os.path.join(full_path, 'src')
         self.log_path = None
+
         paths = [full_path, self.bin_path, self.run_path, self.src_path]
         if self.params.is_mc:
             self.log_path = os.path.join(self.run_path, 'logs')
