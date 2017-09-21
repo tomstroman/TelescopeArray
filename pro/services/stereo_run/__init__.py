@@ -8,6 +8,7 @@ from services import executables
 from services.stereo_run_params import StereoRunParams
 from services.templates import trump_conf, stereo_py
 
+from . import run_management
 import run_stereo_analysis
 
 MASTER_DB_NAME = 'stereo_runs.db'
@@ -63,10 +64,11 @@ class StereoRun(object):
         for attr, value in vars:
             setattr(self, attr, value)
 
+
     def prepare_stereo_run(self):
         logging.warn("method not yet implemented")
-        self.base_run = self._find_or_create_base_run(self.name)
-        self.specific_run = self._find_or_create_specific_run()
+        self.base_run = run_management.find_or_create_base_run(self, self.name)
+        self.specific_run = run_management.find_or_create_specific_run(self)
 
         self._create_directory_structure(self.base_run)
         self._compile_executables()
@@ -75,82 +77,6 @@ class StereoRun(object):
 
     def stereo_run(self):
         logging.warn("method not yet implemented")
-
-    def _find_or_create_base_run(self, supplied_name=None):
-        """
-        Find any StereoRun(s) matching the simulation *parameters* (FDPlaneConfig and Model),
-        and check against the supplied name, otherwise attempt to create one.
-        """
-        assert self.params
-        sql = 'SELECT name, path FROM StereoRuns WHERE fdplaneconfig=\"{0}\" AND model=\"{1}\"'.format(
-                self.params.fdplane_config,
-                self.params.model,
-        )
-        logging.debug('sql: %s', sql)
-
-        matching_runs = self.db.retrieve(sql)
-
-        name_match_paths = []
-        for name, path in matching_runs:
-            logging.info('found base StereoRun %s at path %s', name, path)
-            if name == supplied_name:
-                name_match_paths.append(path)
-
-        if len(name_match_paths) == 1:
-            logging.info('One name-match found; using %s', name_match_paths[0])
-            return name_match_paths[0]
-
-        if not supplied_name:
-            if len(matching_runs) == 1:
-                name, path = matching_runs[0]
-                logging.warn('No name supplied but one matching StereoRun: path=%s', path)
-                return path
-            logging.error('%s matching StereoRuns %s no name supplied.',
-                len(matching_runs),
-                'and' if not len(matching_runs) else 'but'
-            )
-            raise Exception('No StereoRun')
-
-        path = os.path.join(supplied_name, self.params.model)
-        logging.info('No name-matching StereoRuns found. Attempting to create StereoRun with name=%s, path=%s',
-            supplied_name,
-            path
-        )
-        try:
-            self.db.insert_row('INSERT INTO StereoRuns VALUES(?, ?, ?, ?)',
-                (supplied_name, path, self.params.fdplane_config, self.params.model)
-            )
-            return path
-        except Exception as err:
-            logging.error('Failed to create StereoRun. Error: %s', err)
-
-    def _find_or_create_specific_run(self):
-        assert self.base_run
-
-        run_name = self.params.name
-        is_mc = self.params.is_mc
-        if is_mc:
-            sql = 'SELECT name, species FROM MCStereoRuns WHERE stereorun_path=\"{0}\"'.format(self.base_run)
-        else:
-            sql = 'SELECT name FROM DataStereoRuns WHERE stereorun_path=\"{0}\"'.format(self.base_run)
-        logging.debug('sql: %s', sql)
-
-        matching_runs = self.db.retrieve(sql)
-        for row in matching_runs:
-            if row[0] == run_name:
-                logging.info('Found a matching specific run for %s', run_name)
-                return run_name
-
-        logging.info('No matching specific runs found. Attempting to create %s with is_mc=%s', run_name, is_mc)
-        try:
-            if is_mc:
-                self.db.insert_row('INSERT INTO MCStereoRuns VALUES(?, ?, ?)', (run_name, self.base_run, self.params.species))
-            else:
-                self.db.insert_row('INSERT INTO DataStereoRuns VALUES(?, ?)', (run_name, self.base_run))
-            return run_name
-        except Exception as err:
-            logging.error('Failed to create specific run. Error: %s', err)
-
 
     def _create_directory_structure(self, path=None):
         base_run = path if path is not None else self.base_run
