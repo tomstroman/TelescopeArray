@@ -2,7 +2,7 @@
 # Thomas Stroman, University of Utah, 2016-12-05
 # Main supervisory executable for an entire stereo analysis.
 # TODO: Documentation!
-
+import logging
 from db.database_wrapper import DatabaseWrapper
 import os
 from process_night import process_night
@@ -128,6 +128,10 @@ def run(dbfile='db/tafd_analysis.db'):
     **** source: {1}
     **** DB: {2}
     """.format(model, source, dbfile)
+
+    logging.warn("In run_stereo_analysis - and exiting!")
+    return
+
     analysis_db = DatabaseWrapper(dbfile)
 
     date_status, params = _setup_run_get_dates(analysis_db, modelsource)
