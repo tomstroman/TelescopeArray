@@ -52,54 +52,37 @@ def _get_mosix_jobs():
 def _modelsource(model, source):
     return ''.join([i for i in model+source if i.isalnum()])
 
-def _setup_run_get_dates(stereo_run, analysis_db, modelsource, model, source):
+def _setup_run_get_dates(stereo_run, analysis_db, modelsource, model, source, disregard_ignore=False):
     properties = {name: value for name, value in analysis_db.retrieve("SELECT name, value FROM Properties")}
     print "Analysis properties retrieved from database:"
     print properties
 
     ignore_nights = {d: 'ignored: '+r for d,r in analysis_db.retrieve("SELECT date, reason FROM StereoIgnoreNights WHERE modelsource='{}'".format(modelsource))}
 
-    # TEMPORARY - DEBUGGING:
-    print '\nNights that would normally be ignored:', len(ignore_nights)
-    ignore_nights = {} 
-    # TEMPORARY PART FINISHED!
-
+    if disregard_ignore:
+        logging.warn('Nights that would normally be ignored: %s', len(ignore_nights))
+        ignore_nights = {} 
 
     dates = sorted(list(set(stereo_run.dates) - set(ignore_nights.keys())))
 
-    print 'Unique nights not ignored:', len(dates)
-
-    properties.update(temp_properties)
-    simulation.prep_directories_for_simulation(properties, model, source)
-    # this part is going to be a bit of a kludge for now --
-    # eventually generate the needed paths and templates, but
-    # today we just fail loudly if they haven't been created
-
-    modelpath = stereo_run.base_path
-
-    analysispath = os.path.join(modelpath, source)
-    print 'checking for', analysispath
-    assert os.path.isdir(analysispath)
-
-    binpath = os.path.join(modelpath, 'bin')
-    assert os.path.isdir(binpath)
-
-
+    logging.info('Unique nights not ignored: %s', len(dates))
 
     date_status = {date: 'unstarted' for date in dates}
     date_status.update(ignore_nights)
 
-    is_mc = source.startswith('mc')
+    properties.update(temp_properties)
+    simulation.prep_directories_for_simulation(properties, model, source)
+
     trump_template = None
-    if is_mc:
-        trump_template = os.path.join(analysispath, 'yYYYYmMMdDD.fd.conf')
+    if stereo_run.params.is_mc:
+        trump_template = stereo_run.trump_template
         assert os.path.exists(trump_template)
-        assert os.path.exists(os.path.join(analysispath, 'logs'))
+        assert os.path.exists(stereo_run.log_path)
 
     mosq = _get_mosix_jobs()
 
 
-    params = {'model': model, 'source': source, 'is_mc': trump_template, 'path': analysispath, 'mosq': mosq}
+    params = {'model': model, 'source': source, 'is_mc': trump_template, 'path': stereo_run.run_path, 'mosq': mosq}
 
     return date_status, params
 
