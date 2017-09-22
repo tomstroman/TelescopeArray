@@ -80,7 +80,8 @@ class StereoRun(object):
 
     def stereo_run(self, date_list):
         self.dates = self._read_date_list(date_list)
-        run_stereo_analysis.run(self)
+        date_status, params = run_stereo_analysis.run(self)
+        self.status_dates = run_stereo_analysis.report(date_status)
 
     def _read_date_list(self, date_list):
         date_file = os.path.join(self.rootpath, date_list)

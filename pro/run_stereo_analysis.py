@@ -120,15 +120,8 @@ def run(stereo_run, dbfile='db/tafd_analysis.db'):
     date_status, params = _setup_run_get_dates(stereo_run, analysis_db, modelsource, model, source)
     mosq_age = datetime.utcnow()
 
-    logging.warn("In run_stereo_analysis - and exiting!")
-    return
-    #dates = dates[-3:]
-    #dates = dates[:3]
-    #dates = [20160206, 20160207]
-    #dates = [20151104]
-    #dates = [20161109]
-    #dates = []
-    dates = sorted([d for d in date_status.keys() if str(d).startswith('20160')])
+
+    dates = sorted([d for d in date_status.keys()])
 
     for date in dates:
         now = datetime.utcnow()
@@ -140,7 +133,9 @@ def run(stereo_run, dbfile='db/tafd_analysis.db'):
 
         try:
             #date_status[date] = process_night(date, params, start_code='prep_trump_sim')
-            date_status[date] = process_night(date, params, end_code='run_tama')
+            #date_status[date] = process_night(date, params, end_code='run_tama')
+            logging.warn('Not actually processing date %s', date)
+            continue # TODO: remove
         except Exception as e:
             date_status[date] = 'exception'
             print e
