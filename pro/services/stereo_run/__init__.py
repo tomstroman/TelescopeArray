@@ -18,6 +18,8 @@ ENV_VARS = [
     ('rtdata', 'RTDATA'),
 ]
 
+DEFAULT_DATE_LIST_FILE = 'test-date-list.txt'
+DEFAULT_DATE_LIST_CONTENTS = '20080401\n'
 
 class StereoRun(object):
     def __init__(self, name=None):
@@ -76,9 +78,27 @@ class StereoRun(object):
         self._build_templates()
         logging.info("TODO: generate plan for run, report to user")
 
-    def stereo_run(self):
-        logging.warn("method not yet implemented")
+    def stereo_run(self, date_list):
+        self.dates = self._read_date_list(date_list)
         run_stereo_analysis.run(self)
+
+    def _read_date_list(self, date_list):
+        date_file = os.path.join(self.rootpath, date_list)
+        if date_list == DEFAULT_DATE_LIST_FILE and not os.path.exists(date_file):
+            with open(date_file, 'w') as df:
+                df.write(DEFAULT_DATE_LIST_CONTENTS)
+
+        with open(date_file, 'r') as df:
+            dates = sorted(
+                list(
+                    set(
+                        [int(d) for d in df.readlines()]
+                    )
+                )
+            )
+
+        logging.info('Read %s night(s) from %s through %s from %s', len(dates), dates[0], dates[-1], date_file)
+        return dates
 
     def _create_directory_structure(self, path=None):
         base_run = path if path is not None else self.base_run

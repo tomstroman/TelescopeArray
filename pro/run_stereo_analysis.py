@@ -52,7 +52,7 @@ def _get_mosix_jobs():
 def _modelsource(model, source):
     return ''.join([i for i in model+source if i.isalnum()])
 
-def _setup_run_get_dates(analysis_db, modelsource, model, source):
+def _setup_run_get_dates(stereo_run, analysis_db, modelsource, model, source):
     properties = {name: value for name, value in analysis_db.retrieve("SELECT name, value FROM Properties")}
     print "Analysis properties retrieved from database:"
     print properties
@@ -65,21 +65,7 @@ def _setup_run_get_dates(analysis_db, modelsource, model, source):
     # TEMPORARY PART FINISHED!
 
 
-    rootpath = properties['ROOTPATH']
-    dates_file = os.path.join(rootpath, 'list-of-dates')
-
-    dates_file += '-all-lr-20170301.txt'
-
-    print 'Reading list of stereo nights (YYYYMMDD) from master list:', dates_file
-    try:
-        with open(dates_file, 'r') as stream:
-            dates = [int(d) for d in stream.readlines()]
-        print 'Attempting to perform analysis on {} nights.'.format(len(dates))
-    except IOError:
-        print 'Error: could not read', dates_file
-        return None, None
-
-    dates = sorted(list(set(dates) - set(ignore_nights.keys())))
+    dates = sorted(list(set(stereo_run.dates) - set(ignore_nights.keys())))
 
     print 'Unique nights not ignored:', len(dates)
 
@@ -89,7 +75,7 @@ def _setup_run_get_dates(analysis_db, modelsource, model, source):
     # eventually generate the needed paths and templates, but
     # today we just fail loudly if they haven't been created
 
-    modelpath = os.path.join(rootpath, properties['ANALYSIS'], model)
+    modelpath = stereo_run.base_path
 
     analysispath = os.path.join(modelpath, source)
     print 'checking for', analysispath
@@ -148,7 +134,7 @@ def run(stereo_run, dbfile='db/tafd_analysis.db'):
 
     analysis_db = DatabaseWrapper(dbfile)
 
-    date_status, params = _setup_run_get_dates(analysis_db, modelsource, model, source)
+    date_status, params = _setup_run_get_dates(stereo_run, analysis_db, modelsource, model, source)
     mosq_age = datetime.utcnow()
 
     logging.warn("In run_stereo_analysis - and exiting!")

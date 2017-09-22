@@ -1,10 +1,14 @@
 import argparse
 import logging
 
-from services.stereo_run import StereoRun
+from services.stereo_run import StereoRun, DEFAULT_DATE_LIST_FILE
 from utils import log
 
-def make_stereo_happen(console_mirror=False, name=None):
+def make_stereo_happen(
+        console_mirror=False,
+        date_list=None,
+        name=None,
+    ):
     log_name = log.set_up_log(console_mirror=console_mirror)
     if not console_mirror:
         print 'Logging to', log_name
@@ -13,13 +17,17 @@ def make_stereo_happen(console_mirror=False, name=None):
 
     run = StereoRun(name)
     run.prepare_stereo_run()
-    run.stereo_run()
+    run.stereo_run(date_list)
 
     return run
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--name', default='test')
+    parser.add_argument('-d', '--date_list', default=DEFAULT_DATE_LIST_FILE)
     args = parser.parse_args()
-    run = make_stereo_happen(console_mirror=True, name=args.name)
-
+    run = make_stereo_happen(
+        console_mirror=True,
+        name=args.name,
+        date_list=args.date_list,
+    )
