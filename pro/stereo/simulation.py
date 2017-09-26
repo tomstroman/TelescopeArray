@@ -18,13 +18,6 @@ def prep_directories_for_simulation(properties, model, source):
     binpath = os.path.join(modelpath, 'bin')
     sourcepath = os.path.join(modelpath, source)
 
-    # If analysis and model don't exist yet, create them.
-    for p in [analysispath, modelpath]:
-        for d in [p, p.replace('/scratch/', '/raidscratch/')]:
-            if not os.path.isdir(d):
-                print 'Creating directory:', d
-                os.mkdir(d)
-
     # Data path needs a symlink to appear locally in this analysis
     if not os.path.isdir(tafddata):
         print 'Symlinking tafd-data directory'
