@@ -27,7 +27,7 @@ def compile_trump(stereo_run, cwd, destination):
     cmd_shell = ['make realclean']
     sp.check_output(cmd_shell, shell=True, stderr=sp.STDOUT, cwd=cwd)
 
-    cmd_shell = ['make']
+    cmd_shell = ['make', '-j4']
     sp.check_output(cmd_shell, shell=True, stderr=sp.STDOUT, cwd=cwd)
 
     cmd = 'cp bin/trump.run {}'.format(destination)

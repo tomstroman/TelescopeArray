@@ -2,7 +2,18 @@ import logging
 import os
 import subprocess as sp
 
+def _both(path):
+    # Some files are physically in the rootpath, while others are physically
+    # on a RAID-0 volume (striped across 4 disks) for performance. Directories are
+    # symlinked.
+    return [path, path.replace('/scratch/', '/raidscratch/')]
+
 def build_tree(stereo_run, path=None):
+    rootpath = stereo_run.rootpath
+    # If root paths are missing, don't even try to run.
+    for p in _both(stereo_run.rootpath):
+        assert os.path.isdir(p)
+
     base_run = path if path is not None else stereo_run.base_run
     full_path = os.path.join(stereo_run.rootpath, base_run)
     stereo_run.base_path = full_path

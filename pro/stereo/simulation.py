@@ -11,19 +11,12 @@ def prep_directories_for_simulation(properties, model, source):
     """
     print 'Checking directory structure'
     # Location, location, location
-    # Some files are physically in the rootpath, while others are physically
-    # on a RAID-0 volume (striped across 4 disks) for performance. Directories are
-    # symlinked.
     rootpath = properties['ROOTPATH']
     analysispath = os.path.join(rootpath, properties['ANALYSIS'])
     tafddata = os.path.join(analysispath, 'tafd-data')
     modelpath = os.path.join(analysispath, model)
     binpath = os.path.join(modelpath, 'bin')
     sourcepath = os.path.join(modelpath, source)
-
-    # If root paths are missing, don't even try to run.
-    for p in [rootpath, rootpath.replace('/scratch/', '/raidscratch/')]:
-        assert os.path.isdir(p)
 
     # If analysis and model don't exist yet, create them.
     for p in [analysispath, modelpath]:
