@@ -92,12 +92,12 @@ def _build_params(stereo_run, model, source):
 
     return params
 
-def run(stereo_run, dbfile='db/tafd_analysis.db'):
+def run(stereo_run):
     # Initialization
     model = stereo_run.params.model
     source = stereo_run.specific_run
     modelsource = _modelsource(model, source)    
-    dbfile = os.path.join(stereo_run.base_path, 'tafd_analysis.db')
+    dbfile = os.path.join(stereo_run.analysis_path, 'tafd_analysis.db')
     if not os.path.exists(dbfile):
         data_path = os.path.join(stereo_run.rootpath, stereo_run.params.fdplane_config, 'tafd-data')
         base_properties = (

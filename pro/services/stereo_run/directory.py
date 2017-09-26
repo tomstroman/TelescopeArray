@@ -14,7 +14,9 @@ def build_tree(stereo_run, path=None):
     for p in _both(stereo_run.rootpath):
         assert os.path.isdir(p)
 
+    stereo_run.analysis_path = os.path.join(stereo_run.rootpath, stereo_run.name)
     base_run = path if path is not None else stereo_run.base_run
+
     full_path = os.path.join(stereo_run.rootpath, base_run)
     stereo_run.base_path = full_path
     stereo_run.bin_path = os.path.join(full_path, 'bin')

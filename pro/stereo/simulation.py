@@ -54,10 +54,6 @@ def prep_directories_for_simulation(properties, model, source):
                 os.symlink(raidpath, sourcepath)
 
     if is_mc:
-        logpath = os.path.join(sourcepath, 'logs')
-        if not os.path.isdir(logpath):
-            print 'Creating directory:', logpath
-            os.mkdir(logpath)
 
         conf_template = os.path.join(sourcepath, 'yYYYYmMMdDD.fd.conf')
         if not os.path.exists(conf_template):
