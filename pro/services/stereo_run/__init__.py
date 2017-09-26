@@ -1,6 +1,5 @@
 import logging
 import os
-import subprocess as sp
 
 from db import stereo_run_db
 from db.database_wrapper import DatabaseWrapper
@@ -8,7 +7,7 @@ from services import executables
 from services.stereo_run_params import StereoRunParams
 from services.templates import trump_conf, stereo_py
 
-from . import run_management
+from . import run_management, directory
 import run_stereo_analysis
 
 MASTER_DB_NAME = 'stereo_runs.db'
@@ -102,32 +101,7 @@ class StereoRun(object):
         return dates
 
     def _create_directory_structure(self, path=None):
-        base_run = path if path is not None else self.base_run
-        full_path = os.path.join(self.rootpath, base_run)
-        self.base_path = full_path
-        self.bin_path = os.path.join(full_path, 'bin')
-        self.run_path = os.path.join(full_path, self.specific_run)
-        self.src_path = os.path.join(full_path, 'src')
-        self.log_path = None
-
-        paths = [full_path, self.bin_path, self.run_path, self.src_path]
-        if self.params.is_mc:
-            self.log_path = os.path.join(self.run_path, 'logs')
-            paths.append(self.log_path)
-
-        for path in paths:
-            cmd = 'mkdir -p {}'.format(path)
-            logging.info('Verifying path exists: %s', path)
-            logging.debug('cmd: %s', cmd)
-            try:
-                output = sp.check_output(cmd.split(), stderr=sp.STDOUT)
-                logging.debug('output: %s', output)
-            except Exception as err:
-                logging.error("Exception during directory creation: %s", err)
-                raise
-            if output:
-                raise Exception('Unexpected stdout/stderr')
-            assert os.path.isdir(path)
+        directory.build_tree(self, path)
 
     def _compile_executables(self):
         for prog, filename in executables.base_reqs.items():
