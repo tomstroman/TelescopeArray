@@ -52,11 +52,20 @@ def _get_mosix_jobs():
 def _modelsource(model, source):
     return ''.join([i for i in model+source if i.isalnum()])
 
-def _setup_run_get_dates(stereo_run, analysis_db, modelsource, model, source, disregard_ignore=False):
-    properties = {name: value for name, value in analysis_db.retrieve("SELECT name, value FROM Properties")}
-    print "Analysis properties retrieved from database:"
-    print properties
+def _setup_run_get_dates(stereo_run, analysis_db, modelsource, model, source):
+    date_status = _build_date_list(stereo_run, analysis_db, modelsource)
+    params = _build_params(stereo_run, model, source)
 
+    properties = {name: value for name, value in analysis_db.retrieve("SELECT name, value FROM Properties")}
+    logging.info('Analysis properties retrieved from database: %s', properties)
+
+    properties.update(temp_properties)
+    simulation.prep_directories_for_simulation(properties, model, source)
+
+    return date_status, params
+
+
+def _build_date_list(stereo_run, analysis_db, modelsource, disregard_ignore=False):
     ignore_nights = {d: 'ignored: '+r for d,r in analysis_db.retrieve("SELECT date, reason FROM StereoIgnoreNights WHERE modelsource='{}'".format(modelsource))}
 
     if disregard_ignore:
@@ -69,10 +78,9 @@ def _setup_run_get_dates(stereo_run, analysis_db, modelsource, model, source, di
 
     date_status = {date: 'unstarted' for date in dates}
     date_status.update(ignore_nights)
+    return date_status
 
-    properties.update(temp_properties)
-    simulation.prep_directories_for_simulation(properties, model, source)
-
+def _build_params(stereo_run, model, source):
     trump_template = None
     if stereo_run.params.is_mc:
         trump_template = stereo_run.trump_template
@@ -80,12 +88,9 @@ def _setup_run_get_dates(stereo_run, analysis_db, modelsource, model, source, di
         assert os.path.exists(stereo_run.log_path)
 
     mosq = _get_mosix_jobs()
-
-
     params = {'model': model, 'source': source, 'is_mc': trump_template, 'path': stereo_run.run_path, 'mosq': mosq}
 
-    return date_status, params
-
+    return params
 
 def run(stereo_run, dbfile='db/tafd_analysis.db'):
     # Initialization
