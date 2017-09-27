@@ -18,11 +18,6 @@ def prep_directories_for_simulation(properties, model, source):
     binpath = os.path.join(modelpath, 'bin')
     sourcepath = os.path.join(modelpath, source)
 
-    # Data path needs a symlink to appear locally in this analysis
-    if not os.path.isdir(tafddata):
-        print 'Symlinking tafd-data directory'
-        os.symlink(properties['DATAPATH'], tafddata)
-
     # Binaries need a symlink in RAID
     if not os.path.isdir(binpath):
         print 'Creating diretory:', binpath

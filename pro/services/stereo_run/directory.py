@@ -22,13 +22,24 @@ def build_tree(stereo_run, path=None):
 
     stereo_run.base_path = full_path
 
-    # This directory needs to exist on main and RAID
+    # These directories need to exist on main and RAID
     for path in [stereo_run.analysis_path, stereo_run.base_path]:
         for p in _both(path):
             if not os.path.isdir(p):
                 logging.info('Creating directory: %s', p)
                 os.mkdir(p)
 
+    # Real night-sky data is preprocessed once and shared by multiple analyses,
+    # so we can symlink its true location here.
+    stereo_run.tafd_data = os.path.join(stereo_run.analysis_path, 'tafd-data')
+    if not os.path.isdir(stereo_run.tafd_data):
+        true_data_path = os.path.join(stereo_run.rootpath, stereo_run.params.fdplane_config, 'tafd-data')
+        logging.info('Symlinking %s to point to night-sky data at %s', stereo_run.tafd_data, true_data_path)
+        os.symlink(true_data_path, stereo_run.tafd_data)
+
+
+
+    # These directories will exist in one place only, and be symlinked in the other.
     stereo_run.bin_path = os.path.join(full_path, 'bin')
     stereo_run.run_path = os.path.join(full_path, stereo_run.specific_run)
     stereo_run.src_path = os.path.join(full_path, 'src')
