@@ -1,3 +1,6 @@
+import logging
+import os
+
 standard_template_name = 'yYYYYmMMdDD.fd.conf'
 
 conf_meta_template = """
@@ -57,3 +60,38 @@ standard_replacements = {
     '_META_REPLACE_EBREAK_' : '17.52 18.65 19.75',
     '_META_REPLACE_ESLOPE_' : '2.99 3.25 2.81 5.1',
 }
+
+def render_template(stereo_run):
+    showlib = stereo_run.db.retrieve('SELECT dstfile FROM Showlibs WHERE model=\"{0}\" AND species={1}'.format(
+        stereo_run.params.model,
+        stereo_run.params.species,
+    ))[0][0]
+
+    replacements = standard_replacements
+    replacements.update({
+        '_META_REPLACE_GEOCAL_'  : stereo_run.name,
+        '_META_REPLACE_MODEL_'   : stereo_run.params.model,
+        '_META_REPLACE_SOURCE_'  : stereo_run.specific_run,
+        '_META_REPLACE_GEOFILE_' : os.path.join(
+            stereo_run.rtdata,
+            'fdgeom',
+            'geoREPLACE_GEO_{}.dst.gz'.format(stereo_run.params.geometry),
+        ),
+        '_META_REPLACE_SPECIES_' : str(stereo_run.params.species),
+        '_META_REPLACE_SHOWLIB_' : os.path.join(stereo_run.rtdata, 'showlib', showlib),
+        '_META_REPLACE_DTIME_'   : str(stereo_run.params.dtime),
+    })
+
+    meta_template = conf_meta_template
+    for key, value in replacements.items():
+        logging.debug('Replacing %s with %s', key, value)
+        meta_template = meta_template.replace(key, value)
+
+    assert '_META_REPLACE_' not in meta_template
+
+    template = os.path.join(stereo_run.run_path, standard_template_name)
+    with open(template, 'w') as template_file:
+        template_file.write(meta_template)
+
+    return template
+

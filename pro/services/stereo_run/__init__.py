@@ -116,37 +116,7 @@ class StereoRun(object):
         logging.info('creating templates')
 
         if self.params.is_mc:
-            showlib = self.db.retrieve('SELECT dstfile FROM Showlibs WHERE model=\"{0}\" AND species={1}'.format(
-                self.params.model,
-                self.params.species,
-            ))[0][0]
-
-            replacements = trump_conf.standard_replacements
-            replacements.update({
-                '_META_REPLACE_GEOCAL_'  : self.name,
-                '_META_REPLACE_MODEL_'   : self.params.model,
-                '_META_REPLACE_SOURCE_'  : self.specific_run,
-                '_META_REPLACE_GEOFILE_' : os.path.join(
-                    self.rtdata,
-                    'fdgeom',
-                    'geoREPLACE_GEO_{}.dst.gz'.format(self.params.geometry),
-                ),
-                '_META_REPLACE_SPECIES_' : str(self.params.species),
-                '_META_REPLACE_SHOWLIB_' : os.path.join(self.rtdata, 'showlib', showlib),
-                '_META_REPLACE_DTIME_'   : str(self.params.dtime),
-            })
-
-            meta_template = trump_conf.conf_meta_template
-            for key, value in replacements.items():
-                logging.debug('Replacing %s with %s', key, value)
-                meta_template = meta_template.replace(key, value)
-
-            assert '_META_REPLACE_' not in meta_template
-
-            template = os.path.join(self.run_path, trump_conf.standard_template_name)
-            with open(template, 'w') as template_file:
-                template_file.write(meta_template)
-            self.trump_template = template
+            self.trump_template = trump_conf.render_template(self)
         else:
             self.trump_template = None
 
