@@ -15,7 +15,6 @@ from db import tafd_analysis
 from prep_fadc.raw_to_dst import _command
 from process_night import process_night
 from step import steps
-from stereo import simulation
 
 event_interval = 5.0 # average seconds between events
 # TODO: use database for these
@@ -56,12 +55,6 @@ def _setup_run_get_dates(stereo_run, analysis_db, modelsource, model, source):
     date_status = _build_date_list(stereo_run, analysis_db, modelsource)
     params = _build_params(stereo_run, model, source)
 
-    properties = {name: value for name, value in analysis_db.retrieve("SELECT name, value FROM Properties")}
-    logging.info('Analysis properties retrieved from database: %s', properties)
-
-    properties.update(temp_properties)
-    simulation.prep_directories_for_simulation(properties, model, source)
-
     return date_status, params
 
 
@@ -99,12 +92,11 @@ def run(stereo_run):
     modelsource = _modelsource(model, source)    
     dbfile = os.path.join(stereo_run.analysis_path, 'tafd_analysis.db')
     if not os.path.exists(dbfile):
-        data_path = os.path.join(stereo_run.rootpath, stereo_run.params.fdplane_config, 'tafd-data')
         base_properties = (
             ('ROOTPATH', stereo_run.rootpath),
             ('ANALYSIS', stereo_run.name),
             ('DESCRIPTION', 'GDAS atmosphere, "joint" geometry, calibration 1.4, correct molecular atmosphere lookup'),
-            ('DATAPATH', data_path),
+            ('DATAPATH', stereo_run.tafd_data),
         )
 
         tafd_analysis.init(

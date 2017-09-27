@@ -38,29 +38,38 @@ def build_tree(stereo_run, path=None):
         os.symlink(true_data_path, stereo_run.tafd_data)
 
 
-
     # These directories will exist in one place only, and be symlinked in the other.
     stereo_run.bin_path = os.path.join(full_path, 'bin')
+    main, raid = _both(stereo_run.bin_path)
+    if not os.path.isdir(main):
+        os.mkdir(main)
+    if not os.path.isdir(raid):
+        os.symlink(main, raid)
+    assert os.path.realpath(raid) == main
+
     stereo_run.run_path = os.path.join(full_path, stereo_run.specific_run)
+    main, raid = _both(stereo_run.run_path)
+    if stereo_run.params.is_mc:
+        if not os.path.isdir(raid):
+            os.mkdir(raid)
+        if not os.path.isdir(main):
+            os.symlink(raid, main)
+        assert os.path.realpath(main) == raid
+    else:
+        if not os.path.isdir(main):
+            os.mkdir(main)
+
     stereo_run.src_path = os.path.join(full_path, 'src')
     stereo_run.log_path = None
 
-    paths = [stereo_run.bin_path, stereo_run.run_path, stereo_run.src_path]
+    paths = [stereo_run.src_path]
     if stereo_run.params.is_mc:
         stereo_run.log_path = os.path.join(stereo_run.run_path, 'logs')
         paths.append(stereo_run.log_path)
 
     for path in paths:
-        cmd = 'mkdir -p {}'.format(path)
-        logging.info('Verifying path exists: %s', path)
-        logging.debug('cmd: %s', cmd)
-        try:
-            output = sp.check_output(cmd.split(), stderr=sp.STDOUT)
-            logging.debug('output: %s', output)
-        except Exception as err:
-            logging.error("Exception during directory creation: %s", err)
-            raise
-        if output:
-            raise Exception('Unexpected stdout/stderr')
+        if not os.path.isdir(path):
+            logging.info('Creating path: %s', path)
+            os.mkdir(path)
         assert os.path.isdir(path)
 
