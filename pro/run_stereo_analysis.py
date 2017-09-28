@@ -82,7 +82,7 @@ def _build_params(stereo_run):
 
     return params
 
-def run(stereo_run):
+def run(stereo_run, begin, end):
     # Initialization
     model = stereo_run.params.model
     source = stereo_run.specific_run
@@ -114,7 +114,7 @@ def run(stereo_run):
     mosq_age = datetime.utcnow()
 
 
-    dates = sorted([d for d in date_status.keys()])
+    dates = sorted([d for d,v in date_status.items() if not v.startswith('ignored')])
 
     for date in dates:
         now = datetime.utcnow()
@@ -125,10 +125,7 @@ def run(stereo_run):
             params['mosq'] = mosq
 
         try:
-            #date_status[date] = process_night(date, params, start_code='prep_trump_sim')
-            #date_status[date] = process_night(date, params, end_code='run_tama')
-            logging.warn('Not actually processing date %s', date)
-            continue # TODO: remove
+            date_status[date] = process_night(date, params, start_code=begin, end_code=end)
         except Exception as e:
             date_status[date] = 'exception'
             print e

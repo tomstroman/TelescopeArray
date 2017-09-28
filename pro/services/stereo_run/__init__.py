@@ -81,9 +81,9 @@ class StereoRun(object):
         self._build_templates()
         logging.info("TODO: generate plan for run, report to user")
 
-    def stereo_run(self, date_list):
+    def stereo_run(self, date_list, begin, end):
         self.dates = self._read_date_list(date_list)
-        date_status, params = run_stereo_analysis.run(self)
+        date_status, params = run_stereo_analysis.run(self, begin, end)
         self.status_dates = run_stereo_analysis.report(date_status)
 
     def _read_date_list(self, date_list):

@@ -42,11 +42,3 @@ def process_night(night, params, start_code=None, end_code=None):
             return result
 
     return 'end reached'
-
-if __name__ == '__main__':
-    process_night(0)
-
-
-
-
-
