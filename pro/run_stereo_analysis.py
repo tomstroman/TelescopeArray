@@ -48,18 +48,15 @@ def _get_mosix_jobs():
 
     return jobs
 
-def _modelsource(model, source):
-    return ''.join([i for i in model+source if i.isalnum()])
-
-def _setup_run_get_dates(stereo_run, analysis_db, modelsource, model, source):
-    date_status = _build_date_list(stereo_run, analysis_db, modelsource)
-    params = _build_params(stereo_run, model, source)
+def _setup_run_get_dates(stereo_run, analysis_db):
+    date_status = _build_date_list(stereo_run, analysis_db)
+    params = _build_params(stereo_run)
 
     return date_status, params
 
 
-def _build_date_list(stereo_run, analysis_db, modelsource, disregard_ignore=False):
-    ignore_nights = {d: 'ignored: '+r for d,r in analysis_db.retrieve("SELECT date, reason FROM StereoIgnoreNights WHERE modelsource='{}'".format(modelsource))}
+def _build_date_list(stereo_run, analysis_db, disregard_ignore=False):
+    ignore_nights = {d: 'ignored: '+r for d,r in analysis_db.retrieve("SELECT date, reason FROM StereoIgnoreNights WHERE modelsource='{}'".format(stereo_run.modelsource))}
 
     if disregard_ignore:
         logging.warn('Nights that would normally be ignored: %s', len(ignore_nights))
@@ -73,7 +70,7 @@ def _build_date_list(stereo_run, analysis_db, modelsource, disregard_ignore=Fals
     date_status.update(ignore_nights)
     return date_status
 
-def _build_params(stereo_run, model, source):
+def _build_params(stereo_run):
     trump_template = None
     if stereo_run.params.is_mc:
         trump_template = stereo_run.trump_template
@@ -81,7 +78,7 @@ def _build_params(stereo_run, model, source):
         assert os.path.exists(stereo_run.log_path)
 
     mosq = _get_mosix_jobs()
-    params = {'model': model, 'source': source, 'is_mc': trump_template, 'path': stereo_run.run_path, 'mosq': mosq}
+    params = {'model': stereo_run.params.model, 'source': stereo_run.specific_run, 'is_mc': trump_template, 'path': stereo_run.run_path, 'mosq': mosq}
 
     return params
 
@@ -89,7 +86,6 @@ def run(stereo_run):
     # Initialization
     model = stereo_run.params.model
     source = stereo_run.specific_run
-    modelsource = _modelsource(model, source)    
     dbfile = os.path.join(stereo_run.analysis_path, 'tafd_analysis.db')
     if not os.path.exists(dbfile):
         base_properties = (
@@ -114,7 +110,7 @@ def run(stereo_run):
 
     analysis_db = DatabaseWrapper(dbfile)
 
-    date_status, params = _setup_run_get_dates(stereo_run, analysis_db, modelsource, model, source)
+    date_status, params = _setup_run_get_dates(stereo_run, analysis_db)
     mosq_age = datetime.utcnow()
 
 
@@ -140,7 +136,7 @@ def run(stereo_run):
 
         if date_status[date] in ignorable_night_reasons:
             print 'This date will be ignored in future runs.'
-            analysis_db.insert_row('INSERT INTO StereoIgnoreNights VALUES(?, ?, ?)', (date, date_status[date], modelsource))
+            analysis_db.insert_row('INSERT INTO StereoIgnoreNights VALUES(?, ?, ?)', (date, date_status[date], stereo_run.modelsource))
 
     return date_status, params
 

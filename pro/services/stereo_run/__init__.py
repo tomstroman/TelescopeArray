@@ -72,6 +72,10 @@ class StereoRun(object):
         self.base_run = run_management.find_or_create_base_run(self, self.name)
         self.specific_run = run_management.find_or_create_specific_run(self)
 
+        self.modelsource = ''.join(
+            [i for i in self.params.model + self.specific_run if i.isalnum()]
+        )
+        logging.debug('modelsource value: %s', self.modelsource)
         self._create_directory_structure(self.base_run)
         self._compile_executables()
         self._build_templates()
