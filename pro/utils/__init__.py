@@ -2,9 +2,17 @@
 # Thomas Stroman, University of Utah, 2016-12-15
 # Utilities for use in several functions/modules.
 
-import subprocess
-import os
 import datetime
+import os
+import subprocess
+
+
+class Constants(object):
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+
+    def __repr__(self):
+        return '{}'.format(self.__dict__)
 
 def _ymdps(part):
     """
