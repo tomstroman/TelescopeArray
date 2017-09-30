@@ -28,7 +28,7 @@ class StereoRunParams(object):
 
         self.name = name or self._generate_name()
 
-        self.dtime = 60.0 # TODO: get this from input
+        self.dtime = 180.0 # TODO: get this from input
 
     def __repr__(self):
         return 'StereoRunParams {}: fdplane={}, model={}, MC species={}'.format(

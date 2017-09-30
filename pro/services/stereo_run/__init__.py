@@ -124,14 +124,13 @@ class StereoRun(object):
         else:
             self.trump_template = None
 
-        stereo_dot_py = os.path.join(os.getenv('TAHOME'), 'processFD', 'stereo.py')
+        self.stereo_dot_py = os.path.join(self.bin_path, 'stereo.py')
         replacements = {
             '_META_REPLACE_TPNAME_' : self.recon,
             '_META_REPLACE_MDNAME_' : self.mdrecon,
             '_META_REPLACE_STEREOROOT_' : self.rootpath,
         }
 
-#TODO: put stereo.py in self.bin_path, but need to modify intermediate code first
         contents = stereo_py.build_stereo_py(new_replacements=replacements)
-        with open(stereo_dot_py, 'w') as stpyfile:
+        with open(self.stereo_dot_py, 'w') as stpyfile:
             stpyfile.write(contents)

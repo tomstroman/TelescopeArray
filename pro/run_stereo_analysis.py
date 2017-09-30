@@ -78,7 +78,7 @@ def _build_params(stereo_run):
         assert os.path.exists(stereo_run.log_path)
 
     mosq = _get_mosix_jobs()
-    params = {'model': stereo_run.params.model, 'source': stereo_run.specific_run, 'is_mc': trump_template, 'path': stereo_run.run_path, 'mosq': mosq}
+    params = {'model': stereo_run.params.model, 'source': stereo_run.specific_run, 'is_mc': trump_template, 'path': stereo_run.run_path, 'mosq': mosq, 'stereo_run': stereo_run}
 
     return params
 

@@ -3,18 +3,18 @@
 # Code to wrap stereo FADC analysis code, existing as Python code I've
 # written previously. This will be deprecated eventually.
 
+import logging
 import os
-import subprocess
 import re
+import subprocess
 
 from utils import _command
-processfd = os.path.join(os.getenv('TAHOME'), 'processFD')
-stereo_exe = os.path.join(processfd, 'stereo.py')
 
 # This is produced every time we read a DST file. Strip it from stderr.
 dst_stderr = ' $$$ dst_get_block_ : End of input file reached\n'
 
 def analyze_and_dump(night, params):
+    stereo_exe = params['stereo_run'].stereo_dot_py
     analysis = params['path']
     path = os.path.join(analysis, str(night))
 
@@ -31,6 +31,10 @@ def analyze_and_dump(night, params):
     a.wait()
     out = open(stdout, 'r').read()
     err = open(stderr, 'r').read()
+
+    if 'Fatal error' in out:
+        logging.error('Analysis failed for %s', night)
+        return 'fatal error in analysis'
 
     reperr = err.replace(dst_stderr, '')
     if reperr:
