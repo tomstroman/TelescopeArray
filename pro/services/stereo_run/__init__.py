@@ -108,11 +108,9 @@ class StereoRun(object):
         directory.build_tree(self, path)
 
     def _compile_executables(self):
-        for prog, filename in executables.base_reqs.items():
+        for prog, filename in executables.get_base_reqs(self):
             exe = os.path.join(self.bin_path, filename)
-            if os.path.exists(exe):
-                logging.debug('found %s', exe)
-            else:
+            if not os.path.exists(exe):
                 logging.debug('did not find %s', exe)
                 executables.prepare_executable(self, prog, exe, src_dir=self.src_path)
 

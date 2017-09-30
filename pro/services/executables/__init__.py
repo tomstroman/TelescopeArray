@@ -2,31 +2,55 @@ import logging
 import os
 import subprocess as sp
 
-from compile_trump import compile_trump
+from collections import OrderedDict
 
-base_reqs = {
-    'trump': 'trump.run',
+from compile_trump import compile_trump
+from compile_fdtp import compile_fdtp
+
+base_reqs = OrderedDict()
+base_reqs['trump'] = 'trump.run'
+base_reqs.update({
     'fdtp':  'fdtubeprofile.run',
     'stpfl': 'stpfl12_main',
     'dump_tuples': 'dumpst.run',
     'dump_profs' : 'dumpster2.run',
     'dump_meta'  : 'dumpst-rootformat.txt',
-}
+})
 
+
+use_recon = ['fdtp']
+use_mdrecon = ['stpfl']
+
+TAHOME = os.getenv('TAHOME')
 save_files = {
     'trump': {
-        'base'  : os.path.join(os.getenv('TAHOME'), 'trump'),
+        'base'  : os.path.join(TAHOME, 'trump'),
         'files' : [
             'inc/constants.h',
             'inc/control.h',
         ]
     },
+    'fdtp': {
+        'base'  : os.path.join(TAHOME, 'fdtubeprofile'),
+        'files' : [],
+    },
 }
 
 compiler_map = {
     'trump': (save_files['trump']['base'], compile_trump), 
+    'fdtp': (save_files['fdtp']['base'], compile_fdtp),
 }
 
+
+def get_base_reqs(stereo_run):
+    items = []
+    for name, filename in base_reqs.items():
+        if name in use_recon:
+            filename = stereo_run.recon + '-' + filename
+        elif name in use_mdrecon:
+            filename = stereo_run.mdrecon + '-' + filename
+        items.append((name, filename))
+    return items
 
 def prepare_executable(stereo_run, name, destination, src_dir=None):
     assert name in base_reqs.keys()
@@ -35,6 +59,7 @@ def prepare_executable(stereo_run, name, destination, src_dir=None):
         cwd, compiler = compiler_map[name]
         compiler(stereo_run, cwd, destination)
     else:
+        logging.warn('Creating unusable exe: %s. This WILL cause errors.', name)
         cmd = 'touch {}'.format(destination)
         output = sp.check_output(cmd.split(), stderr=sp.STDOUT)
 
