@@ -4,6 +4,7 @@
 # Thomas Stroman, University of Utah, 2016-11-27
 # Supervise the stereo processing of a single night from start to finish.
 
+import logging
 from step import Step, steps
 
 
@@ -16,7 +17,6 @@ def process_night(night, params, start_code=None, end_code=None):
     step if it is possible. Otherwise it will begin at the last known
     checkpoint for the night.
     """
-    print night
     if night in params['mosq']:
         return 'found in queue'
 
@@ -31,7 +31,7 @@ def process_night(night, params, start_code=None, end_code=None):
     if end_code is None:
         end_code = steps[-1].id
 
-    #print 'Processing {} from {} through {}'.format(night, steps[start_code], steps[end_code])
+    logging.info('Processing %s from %s through %s', night, steps[start_code].name, steps[end_code].name)
 
 
     for step in steps:
