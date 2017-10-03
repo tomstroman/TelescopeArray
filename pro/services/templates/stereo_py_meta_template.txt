@@ -838,8 +838,12 @@ class night(object):
       if not (os.path.exists(txttuple) and os.path.exists(txtprof)):
         os.system('{0} {1} > {2}'.format(dumpst,eventfile,txttuple))
         os.system('{0} {1} > {2}'.format(dumpster,eventfile,txtprof))
-      
-      return True
+      success = True
+      for txt in [txttuple, txtprof]:
+          if os.path.getsize(txt) == 0:
+              os.remove(txt)
+              success = False
+      return success
       
     print 'Dump to ASCII files here.'
     """ 
