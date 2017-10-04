@@ -7,6 +7,13 @@ COMPILER_SYNTAX_END = '*/'
 
 def compile_dump_profs(stereo_run, cwd, destination):
     template_name = 'dumpster2_template.c'
+    _compile_template(template_name, stereo_run, destination)
+
+def compile_dump_tuples(stereo_run, cwd, destination):
+    template_name = 'dumpst_template.c'
+    _compile_template(template_name, stereo_run, destination)
+
+def _compile_template(template_name, stereo_run, destination):
     source_template = os.path.join(os.path.dirname(__file__), template_name)
     with open(source_template, 'r') as c_source_file:
         source = c_source_file.read()
@@ -30,8 +37,5 @@ def compile_dump_profs(stereo_run, cwd, destination):
 
     for cmd in cmds:
         sp.check_output(cmd, shell=True, cwd=stereo_run.bin_path, stderr=sp.STDOUT)
-    
 
-
-def compile_dump_tuples(stereo_run, cwd, destination):
-    pass
+    assert os.path.exists(destination)
