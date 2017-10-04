@@ -4,8 +4,10 @@ import subprocess as sp
 
 from collections import OrderedDict
 
+from compile_dump import compile_dump_tuples, compile_dump_profs
 from compile_trump import compile_trump
 from compile_fdtp import compile_fdtp
+
 
 base_reqs = OrderedDict()
 base_reqs['trump'] = 'trump.run'
@@ -23,6 +25,14 @@ use_mdrecon = ['stpfl']
 
 TAHOME = os.getenv('TAHOME')
 save_files = {
+    'dump_profs': {
+        'base' : None,
+        'files': [],
+    },
+    'dump_tuples': {
+        'base' : None,
+        'files': [],
+    },
     'trump': {
         'base'  : os.path.join(TAHOME, 'trump'),
         'files' : [
@@ -37,8 +47,10 @@ save_files = {
 }
 
 compiler_map = {
-    'trump': (save_files['trump']['base'], compile_trump), 
+    'dump_profs' : (None, compile_dump_profs),
+    'dump_tuples': (None, compile_dump_tuples),
     'fdtp': (save_files['fdtp']['base'], compile_fdtp),
+    'trump': (save_files['trump']['base'], compile_trump),
 }
 
 
