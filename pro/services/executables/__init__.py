@@ -7,10 +7,12 @@ from collections import OrderedDict
 from compile_dump import compile_dump_tuples, compile_dump_profs
 from compile_trump import compile_trump
 from compile_fdtp import compile_fdtp
+from compile_mc2k12 import compile_mc2k12
 
 
 base_reqs = OrderedDict()
 base_reqs['trump'] = 'trump.run'
+base_reqs['mc2k12'] = 'mc2k12_main'
 base_reqs.update({
     'fdtp':  'fdtubeprofile.run',
     'stpfl': 'stpfl12_main',
@@ -50,6 +52,7 @@ compiler_map = {
     'dump_profs' : (None, compile_dump_profs),
     'dump_tuples': (None, compile_dump_tuples),
     'fdtp': (save_files['fdtp']['base'], compile_fdtp),
+    'mc2k12': (None, compile_mc2k12),
     'trump': (save_files['trump']['base'], compile_trump),
 }
 
