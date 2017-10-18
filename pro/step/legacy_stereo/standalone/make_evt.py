@@ -2,6 +2,22 @@ import os
 import re
 import sys
 
+
+def jdn(ymd, sec):
+    year = int(ymd[0:4])
+    month = int(ymd[4:6])
+    day = int(ymd[6:])
+
+    a = int( (14 - month)/12 )
+    y = year + 4800 - a
+    m = month + 12*a - 3
+    jday = day + int((153*m+2)/5) + 365*y + int(y/4) - int(y/100) + int(y/400) - 32045
+    jsec = sec - 43200.
+    if jsec < 0:
+        jsec += 86400
+        jday -= 1
+    return jday, jsec
+
 print sys.argv
 
 conv_1mev_to_50kev = (1.0 - 0.05*0.045) / (1.0 - 0.045)
@@ -60,9 +76,10 @@ for event in events:
     # event number, species, ontime flag
     evt.write('{0} {1} 1\n'.format(n, 1 if field[3] == '14' else 2))
 
-    # UTC date YYYYMMDD, second of UTC day, millisecond, nanosecond
+    # MJD, second of Julian day, millisecond, nanosecond
+    jday, jsec = jdn(ymd, t)
     evt.write('{0} {1} {2} {3}\n'.format(
-        ymd, int(t), int(t * 1000), int(ns)
+        jday - 2440000, int(jsec), int(jsec * 1000), int(ns)
     ))
 
     s = -1.0 * (float(field[12]) * float(field[15]) +
