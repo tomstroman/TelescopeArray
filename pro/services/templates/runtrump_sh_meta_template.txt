@@ -1,0 +1,81 @@
+#!/bin/bash
+if [[ $# -ne 1 ]] ; then
+  echo "usage: runtrump.sh /path/to/config-location"
+  echo "  assumes that config-location contains the .conf file(s)"
+  exit
+fi
+
+loc=$(readlink -e $1)
+
+if [[ ! -d $loc ]] ; then
+  echo "Error: not a directory - $loc"
+  exit
+fi
+
+trump=$loc/../../../bin/trump.run
+if [[ ! -e $trump ]] ; then
+  echo "Error: TRUMP not found at $trump"
+  exit
+fi
+rtsparser=$TAHOME/trump/bin/rtsparser.run
+fdplane=$TAHOME/fdplane/bin/fdplane.run
+dstdump=$TADSTBIN/dstdump.run
+dstsplit=$TADSTBIN/dstsplit.run
+
+brid=0
+lrid=1
+
+geo[$brid]=$RTDATA/fdgeom/geobr_joint.dst.gz
+geo[$lrid]=$RTDATA/fdgeom/geolr_joint.dst.gz
+
+sa[$brid]=br
+sa[$lrid]=lr
+
+sitename[$brid]=black-rock
+sitename[$lrid]=long-ridge
+
+cd $loc
+n=`ls *.conf | wc -l`
+if [[ $n -eq 0 ]] || [[ $n -gt 2 ]] ; then
+  echo "Error: $n configurations found (expecting either 1 or 2)"
+  exit
+fi
+
+outfile=trump.out
+
+$trump *conf &> $outfile
+
+mv */*.rts .
+
+for rts in `ls *.rts` ; do 
+  $rtsparser -Etslpcgu $rts | gawk '$1 != o {print $1,$4,$5*10000+$6*100+$7,3600*$8+60*$9+$10 "." $11,$12,$13,$14,$16,$17,$18,$19,$20,$21,log($22)/log(10.)} {o=$1}' > $rts.txt 
+  root -l -q "$TRUMP/bin/rts2root.C(\"$rts.txt\")"
+  rm $rts.txt
+  
+  $TAHOME/processFD/prepmdsim.sh $rts
+  
+  $TAHOME/processFD/runmdsim.sh *.txt_md.in
+  
+done
+# exit
+for siteid in $brid $lrid ; do
+  site=${sitename[$siteid]}
+  if [[ ! -d $site ]] ; then
+    continue
+  fi
+  cd $site
+  
+  if [[ $n -eq 1 ]] ; then
+    f=`ls *d??.dst.gz`
+    $dstdump -${sa[$siteid]}raw $f | grep event_code > parts.txt
+    for i in `gawk '{print $4}' parts.txt | uniq` ; do 
+      gawk -v m=$i '$4==m {print NR-1}' parts.txt > want
+      $dstsplit -w want -o ${f:0:11}p${i}.dst.gz $f
+    done
+  fi
+  for f in `ls *p??.dst.gz` ; do
+    $fdplane -geo ${geo[$siteid]} -output 1000 $f &> ${f/dst\.gz/fdplane\.out}
+  done
+  rm y????m??d??.dst.gz
+  cd ..
+done
