@@ -15,6 +15,7 @@ MASTER_DB_NAME = 'stereo_runs.db'
 ENV_VARS = [
     ('rootpath', 'TAFD_STEREO_ROOT'),
     ('rtdata', 'RTDATA'),
+    ('tahome', 'TAHOME'),
 ]
 
 DEFAULT_DATE_LIST_FILE = 'test-date-list.txt'
@@ -119,8 +120,10 @@ class StereoRun(object):
 
         if self.params.is_mc:
             self.trump_template = trump_conf.render_template(self)
+            self.runtrump_sh = os.path.join(self.tahome, 'processFD', 'runtrump.sh')
         else:
             self.trump_template = None
+            self.runtrump_sh = None
 
         self.stereo_dot_py = os.path.join(self.bin_path, 'stereo.py')
         replacements = {

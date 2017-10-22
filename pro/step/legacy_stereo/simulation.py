@@ -13,7 +13,6 @@ from db.fadc_process import _ymdps
 
 processfd = os.path.join(os.getenv('TAHOME'), 'processFD')
 prep_trump_stereo_exe = os.path.join(processfd, 'prep-trump-stereo.py')
-runtrump_exe = os.path.join(processfd, 'runtrump.sh')
 def verify_data(night, params):
     pass
 
@@ -45,6 +44,7 @@ def run_trump_sim(night, params):
     if not params['is_mc']:
         return None
 
+    runtrump_exe = params['stereo_run'].runtrump_sh
     analysis = params['path']
     trump_path = os.path.join(analysis, str(night), 'trump')
 
