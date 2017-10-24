@@ -8,6 +8,10 @@ __location__ = os.path.realpath(
 meta_template_file = os.path.join(__location__, 'runtrump_sh_meta_template.txt')
 
 standard_replacements = {
+    '_META_REPLACE_PREPMD_': '$TAHOME/processFD/prepmdsim.sh',
+    '_META_REPLACE_RUNMD_': '$TAHOME/processFD/runmdsim.sh',
+    '_META_REPLACE_GEOBR_'  : '$RTDATA/fdgeom/geobr_joint.dst.gz',
+    '_META_REPLACE_GEOLR_'  : '$RTDATA/fdgeom/geolr_joint.dst.gz',
 }
 
 
@@ -22,4 +26,5 @@ def build_runtrump_sh(new_replacements=None):
     for placeholder, replacement in replacements.items():
         meta_template = meta_template.replace(placeholder, replacement)
 
+    assert '_META_REPLACE_' not in meta_template
     return meta_template

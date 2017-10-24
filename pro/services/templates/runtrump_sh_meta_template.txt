@@ -25,8 +25,8 @@ dstsplit=$TADSTBIN/dstsplit.run
 brid=0
 lrid=1
 
-geo[$brid]=$RTDATA/fdgeom/geobr_joint.dst.gz
-geo[$lrid]=$RTDATA/fdgeom/geolr_joint.dst.gz
+geo[$brid]=_META_REPLACE_GEOBR_
+geo[$lrid]=_META_REPLACE_GEOLR_
 
 sa[$brid]=br
 sa[$lrid]=lr
@@ -34,6 +34,8 @@ sa[$lrid]=lr
 sitename[$brid]=black-rock
 sitename[$lrid]=long-ridge
 
+prep_md=_META_REPLACE_PREPMD_
+run_md=_META_REPLACE_RUNMD_
 cd $loc
 n=`ls *.conf | wc -l`
 if [[ $n -eq 0 ]] || [[ $n -gt 2 ]] ; then
@@ -52,9 +54,9 @@ for rts in `ls *.rts` ; do
   root -l -q "$TRUMP/bin/rts2root.C(\"$rts.txt\")"
   rm $rts.txt
   
-  $TAHOME/processFD/prepmdsim.sh $rts
+  $prep_md $rts
   
-  $TAHOME/processFD/runmdsim.sh *.txt_md.in
+  $run_md *.txt_md.in
   
 done
 # exit
