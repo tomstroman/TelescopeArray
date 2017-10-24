@@ -1,9 +1,11 @@
 import logging
+import os
 
 class StereoRunParams(object):
-    def __init__(self, db, is_mc=True, fdplane_config='joint_cal1.4', geometry=None, 
+    def __init__(self, stereo_run, is_mc=True, fdplane_config='joint_cal1.4', geometry=None,
             calibration=None, model=None, species=None, name=None):
-        self.db = db
+        self.db = stereo_run.db
+        self.stereo_run = stereo_run
 
 # determine the calibration and geometry associated with the source data
         vconfig, vcal, vgeo = self._validate_fdplane_cfg(fdplane_config)
@@ -17,6 +19,7 @@ class StereoRunParams(object):
         if self.geometry != vgeo:
             logging.warn("using geometry=%s but fdplane_config %s uses geometry=%s", self.geometry, vconfig, vgeo)
 
+        self.geometry_dsts = self._find_geometry_dsts()
         self.model = model or self._pick_model()
         self.dedx_model = self.db.retrieve('SELECT dedx_model FROM Models where name="{}"'.format(self.model))[0][0]
 
@@ -31,11 +34,12 @@ class StereoRunParams(object):
         self.dtime = 180.0 # TODO: get this from input
 
     def __repr__(self):
-        return 'StereoRunParams {}: fdplane={}, model={}, MC species={}'.format(
+        return 'StereoRunParams {}: fdplane={}, model={}, MC species={}, geometry={}'.format(
             self.name,
             self.fdplane_config,
             self.model,
             self.species,
+            self.geometry_dsts,
         )
 
     def _validate_fdplane_cfg(self, config):
@@ -72,3 +76,20 @@ class StereoRunParams(object):
             return "nature"
         species = self.db.retrieve('SELECT name FROM Species WHERE corsika_id={0}'.format(self.species))[0][0]
         return 'mc-{0}'.format(species)
+
+    def _find_geometry_dsts(self):
+        dsts_by_site = self.db.retrieve(
+            'SELECT S.shortname, G.dstfile FROM SiteGeometry G JOIN Sites S ON G.site=S.ID WHERE G.geometryset="{0}"'.format(
+                self.geometry
+            )
+        )
+        dsts = {
+            site: os.path.join(
+                self.stereo_run.rtdata,
+                'fdgeom',
+                dst,
+            ) for site, dst in dsts_by_site
+        }
+        assert len(dsts) == 3
+        assert all(os.path.exists(dst) for dst in dsts.values())
+        return dsts

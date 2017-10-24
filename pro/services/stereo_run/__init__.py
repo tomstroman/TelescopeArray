@@ -29,7 +29,7 @@ class StereoRun(object):
 
         self._prepare_database()
 
-        self.params = StereoRunParams(self.db)
+        self.params = StereoRunParams(self)
         logging.info("Parameters object: %s", self.params)
 
 # TODO: replace this function with runtime arguments
