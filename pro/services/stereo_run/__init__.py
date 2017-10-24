@@ -118,10 +118,16 @@ class StereoRun(object):
     def _build_templates(self):
         logging.info('creating templates')
 
+        geometry_replacements = {
+            '_META_REPLACE_GEOBR_': self.params.geometry_dsts['br'],
+            '_META_REPLACE_GEOLR_': self.params.geometry_dsts['lr'],
+            '_META_REPLACE_GEOMD_': self.params.geometry_dsts['md'],
+        }
+
         if self.params.is_mc:
             self.trump_template = trump_conf.render_template(self)
             self.runtrump_sh = os.path.join(self.bin_path, 'runtrump.sh')
-            contents = runtrump_sh.build_runtrump_sh()
+            contents = runtrump_sh.build_runtrump_sh(new_replacements=geometry_replacements)
             with open(self.runtrump_sh, 'w') as shfile:
                 shfile.write(contents)
             os.chmod(self.runtrump_sh, 0755)
@@ -135,6 +141,7 @@ class StereoRun(object):
             '_META_REPLACE_MDNAME_' : self.mdrecon,
             '_META_REPLACE_STEREOROOT_' : self.rootpath,
         }
+        replacements.update(geometry_replacements)
 
         contents = stereo_py.build_stereo_py(new_replacements=replacements)
         with open(self.stereo_dot_py, 'w') as stpyfile:
