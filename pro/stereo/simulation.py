@@ -11,6 +11,36 @@ from distutils import spawn as distutils__spawn
 from glob import glob
 from math import log10
 
+FIELDS = [
+    'event',
+    'species',
+    'ymd',
+    'sec',
+    'logE',
+    'xcore',
+    'ycore',
+    'vx',
+    'vy',
+    'vz',
+    'x0',
+    'lambda',
+    'xmax',
+    'logNmax',
+]
+
+DIRECT_FIELDS = {
+    'event': 0,
+    'species': 3,
+    'logE': 11,
+    'xcore': 12,
+    'ycore': 13,
+    'vx': 15,
+    'vy': 16,
+    'vz': 17,
+    'x0': 18,
+    'lambda': 19,
+    'xmax': 20,
+}
 def simulate_night(trump_path):
     print trump_path
     assert os.path.isdir(trump_path), 'Not a directory: {}'.format(trump_path)
@@ -107,8 +137,7 @@ def _format_line(line, last_event):
     if d['event'] == last_event:
         return '', last_event
 
-    fields = ['event', 'species', 'ymd', 'sec', 'logE', 'xcore', 'ycore', 'vx', 'vy', 'vz', 'x0', 'lambda', 'xmax', 'logNmax']
-    buf = ' '.join([d[f] for f in fields])
+    buf = ' '.join([d[f] for f in FIELDS])
     buf += '\n'
     return buf, d['event']
 
@@ -123,21 +152,8 @@ def _get_dict(line):
         'logNmax' : '{0:.5}'.format(log10(float(s[21]))),
     }
 
-    direct_fields = {
-        'event': 0,
-        'species': 3,
-        'logE': 11,
-        'xcore': 12,
-        'ycore': 13,
-        'vx': 15,
-        'vy': 16,
-        'vz': 17,
-        'x0': 18,
-        'lambda': 19,
-        'xmax': 20,
-    }
 
-    d.update({field: s[index] for field, index in direct_fields.items()})
+    d.update({field: s[index] for field, index in DIRECT_FIELDS.items()})
     return d
 
 
