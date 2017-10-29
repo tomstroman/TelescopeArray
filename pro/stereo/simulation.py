@@ -7,6 +7,7 @@ import os
 import shutil
 import subprocess as sp
 
+from distutils import spawn as distutils__spawn
 from glob import glob
 
 def simulate_night(trump_path):
@@ -19,7 +20,7 @@ def simulate_night(trump_path):
 
 def run_trump(trump_path):
     rts = generate_trump_mc(trump_path)
-    rts_to_ROOT()
+    rts_to_ROOT(rts)
     split_fd_output()
     run_fdplane()
 
@@ -72,8 +73,25 @@ def generate_trump_mc(trump_path, regenerate=False):
 
     return rts
 
-def rts_to_ROOT():
-    pass
+def rts_to_ROOT(rts):
+    rts_parser_exe = os.path.join(os.getenv('TAHOME'), 'trump', 'bin', 'rtsparser.run')
+    rts_to_root_exe = rts_parser_exe.replace('rtsparser.run', 'rts2root.C')
+    for exe in [rts_parser_exe, rts_to_root_exe]:
+        assert os.path.exists(exe), 'Not found: {}'.format(exe)
+    assert distutils__spawn.find_executable('root'), 'ROOT appears not to be installed'
+
+    # TODO: use Python for this since it's failing
+    magic_cmd = '''{rtsparser} -Etslpcgu {rts} | gawk '$1 != o {{print $1,$4,$5*10000+$6*100+$7,3600*$8+60*$9+$10 "." $11,$12,$13,$14,$16,$17,$18,$19,$20,$21,log($22)/log(10.)}} {{o=$1}}' > {rts}.txt'''.format(rtsparser=rts_parser_exe, rts=rts)
+    print magic_cmd
+    sp.check_output(magic_cmd, shell=True)
+
+    cmd = 'root -l -q "{0}(\"{1}.txt\")"'.format(rts_to_root_exe, rts)
+    sp.check_output(cmd, shell=True)
+    os.remove('{}.txt'.format(rts))
+
+
+
+
 
 def split_fd_output():
     pass
