@@ -4,6 +4,7 @@
 
 import argparse
 import os
+import shutil
 import subprocess as sp
 
 from glob import glob
@@ -17,7 +18,7 @@ def simulate_night(trump_path):
 
 
 def run_trump(trump_path):
-    generate_trump_mc(trump_path)
+    rts = generate_trump_mc(trump_path)
     rts_to_ROOT()
     split_fd_output()
     run_fdplane()
@@ -34,7 +35,15 @@ def run_md_sim():
     run_pass3()
 
 
-def generate_trump_mc(trump_path):
+def generate_trump_mc(trump_path, regenerate=False):
+    '''
+    Locate the TRUMP executable and configuration files.
+    Run TRUMP (this may take minutes or hours).
+    Find the .rts file and move it to trump_path.
+
+    Return the final location of the .rts file.
+    '''
+
     confs = glob(os.path.join(trump_path, '*.conf'))
     assert 0 < len(confs) <= 2, '{} configurations found (expecting either 1 or 2)'.format(len(confs))
 
@@ -42,13 +51,26 @@ def generate_trump_mc(trump_path):
     trump_exe = os.path.sep.join(path_tokens[:-4] + ['bin', 'trump.run'])
     assert os.path.exists(trump_exe), 'TRUMP not found at {}'.format(trump_exe)
 
-    cmd = '{} *.conf &> trump.out'.format(trump_exe)
-    print cmd
-    sp.check_output(cmd, shell=True, cwd=trump_path)
-    print 'done'
+    output = os.path.join(trump_path, 'trump.out')
 
+    if regenerate or not os.path.exists(output):
+        cmd = '{} *.conf &> {}'.format(trump_exe, output)
+        sp.check_output(cmd, shell=True, cwd=trump_path)
 
+        rts_files = glob(os.path.join(trump_path, '*', '*.rts'))
+        if len(rts_files) <> 1:
+            print 'Zero or multiple RTS files found:', rts_files
 
+        bn = os.path.basename(rts_files[0])
+        rts = os.path.join(trump_path, bn)
+
+        if os.path.exists(rts):
+            os.remove(rts)
+        shutil.move(rts_files[0], trump_path)
+    else:
+        rts = glob(os.path.join(trump_path, '*.rts'))[0]
+
+    return rts
 
 def rts_to_ROOT():
     pass
