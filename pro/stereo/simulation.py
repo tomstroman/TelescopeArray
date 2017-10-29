@@ -9,6 +9,7 @@ import subprocess as sp
 
 from distutils import spawn as distutils__spawn
 from glob import glob
+from math import log10
 
 def simulate_night(trump_path):
     print trump_path
@@ -20,7 +21,10 @@ def simulate_night(trump_path):
 
 def run_trump(trump_path):
     rts = generate_trump_mc(trump_path)
-    rts_to_ROOT(rts)
+    try:
+        rts_to_ROOT(rts)
+    except AssertionError: # this is not a critical step and can be fixed later
+        print 'Warning! No ROOT file generated.'
     split_fd_output()
     run_fdplane()
 
@@ -80,16 +84,61 @@ def rts_to_ROOT(rts):
         assert os.path.exists(exe), 'Not found: {}'.format(exe)
     assert distutils__spawn.find_executable('root'), 'ROOT appears not to be installed'
 
-    # TODO: use Python for this since it's failing
-    magic_cmd = '''{rtsparser} -Etslpcgu {rts} | gawk '$1 != o {{print $1,$4,$5*10000+$6*100+$7,3600*$8+60*$9+$10 "." $11,$12,$13,$14,$16,$17,$18,$19,$20,$21,log($22)/log(10.)}} {{o=$1}}' > {rts}.txt'''.format(rtsparser=rts_parser_exe, rts=rts)
-    print magic_cmd
-    sp.check_output(magic_cmd, shell=True)
+    cmd = '{rtsparser} -Etslpcgu {rts}'.format(rtsparser=rts_parser_exe, rts=rts)
+    output = sp.check_output(cmd, shell=True)
+    lines = output.split('\n')[:-1]
 
-    cmd = 'root -l -q "{0}(\"{1}.txt\")"'.format(rts_to_root_exe, rts)
+    buf = ''
+    last_event = None
+    for line in lines:
+        text, last_event = _format_line(line, last_event)
+        buf += text
+
+    temp_file = '{}.txt'.format(rts)
+    with open(temp_file, 'w') as rts_txt:
+        rts_txt.write(buf)
+
+    cmd = 'root -l -q "{0}(\\"{1}\\")"'.format(rts_to_root_exe, temp_file)
     sp.check_output(cmd, shell=True)
-    os.remove('{}.txt'.format(rts))
+    os.remove(temp_file)
 
+def _format_line(line, last_event):
+    d = _get_dict(line)
+    if d['event'] == last_event:
+        return '', last_event
 
+    fields = ['event', 'species', 'ymd', 'sec', 'logE', 'xcore', 'ycore', 'vx', 'vy', 'vz', 'x0', 'lambda', 'xmax', 'logNmax']
+    buf = ' '.join([d[f] for f in fields])
+    buf += '\n'
+    return buf, d['event']
+
+def _get_dict(line):
+    s = line.split()
+    d = {
+        'ymd' : ''.join(s[4:7]),
+        'sec' : '{sec}.{nanosec}'.format(
+            sec=3600*int(s[7]) + 60*int(s[8]) + int(s[9]),
+            nanosec=s[10],
+        ),
+        'logNmax' : '{0:.5}'.format(log10(float(s[21]))),
+    }
+
+    direct_fields = {
+        'event': 0,
+        'species': 3,
+        'logE': 11,
+        'xcore': 12,
+        'ycore': 13,
+        'vx': 15,
+        'vy': 16,
+        'vz': 17,
+        'x0': 18,
+        'lambda': 19,
+        'xmax': 20,
+    }
+
+    d.update({field: s[index] for field, index in direct_fields.items()})
+    return d
 
 
 
