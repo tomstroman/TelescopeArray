@@ -4,18 +4,20 @@
 
 import argparse
 import os
+import subprocess as sp
 
+from glob import glob
 
 def simulate_night(trump_path):
-    run_trump()
+    print trump_path
+    assert os.path.isdir(trump_path), 'Not a directory: {}'.format(trump_path)
+    run_trump(trump_path)
     prep_md_sim()
     run_md_sim()
-    print trump_path
-    assert os.path.isdir(trump_path)
 
 
-def run_trump():
-    generate_trump_mc()
+def run_trump(trump_path):
+    generate_trump_mc(trump_path)
     rts_to_ROOT()
     split_fd_output()
     run_fdplane()
@@ -32,8 +34,21 @@ def run_md_sim():
     run_pass3()
 
 
-def generate_trump_mc():
-    pass
+def generate_trump_mc(trump_path):
+    confs = glob(os.path.join(trump_path, '*.conf'))
+    assert 0 < len(confs) <= 2, '{} configurations found (expecting either 1 or 2)'.format(len(confs))
+
+    path_tokens = trump_path.split(os.path.sep)
+    trump_exe = os.path.sep.join(path_tokens[:-4] + ['bin', 'trump.run'])
+    assert os.path.exists(trump_exe), 'TRUMP not found at {}'.format(trump_exe)
+
+    cmd = '{} *.conf &> trump.out'.format(trump_exe)
+    print cmd
+    sp.check_output(cmd, shell=True, cwd=trump_path)
+    print 'done'
+
+
+
 
 def rts_to_ROOT():
     pass
