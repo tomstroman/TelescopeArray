@@ -88,19 +88,27 @@ class StereoRun(object):
         self.status_dates = run_stereo_analysis.report(date_status)
 
     def _read_date_list(self, date_list):
-        date_file = os.path.join(self.rootpath, date_list)
-        if date_list == DEFAULT_DATE_LIST_FILE and not os.path.exists(date_file):
-            with open(date_file, 'w') as df:
-                df.write(DEFAULT_DATE_LIST_CONTENTS)
+        try:
+            dates = [int(date_list)]
+            date_file = 'stdin'
+            logging.info('Interpreting %s as a date', date_list)
+        except ValueError:
+            dates = None
 
-        with open(date_file, 'r') as df:
-            dates = sorted(
-                list(
-                    set(
-                        [int(d) for d in df.readlines()]
+        if dates is None:
+            date_file = os.path.join(self.rootpath, date_list)
+            if date_list == DEFAULT_DATE_LIST_FILE and not os.path.exists(date_file):
+                with open(date_file, 'w') as df:
+                    df.write(DEFAULT_DATE_LIST_CONTENTS)
+
+            with open(date_file, 'r') as df:
+                dates = sorted(
+                    list(
+                        set(
+                            [int(d) for d in df.readlines()]
+                        )
                     )
                 )
-            )
 
         logging.info('Read %s night(s) from %s through %s from %s', len(dates), dates[0], dates[-1], date_file)
         return dates
