@@ -4,9 +4,11 @@
 
 import argparse
 import os
+import re
 import shutil
 import subprocess as sp
 
+from collections import defaultdict
 from glob import glob
 
 import utils
@@ -14,18 +16,28 @@ import utils
 def simulate_night(trump_path):
     print trump_path
     assert os.path.isdir(trump_path), 'Not a directory: {}'.format(trump_path)
-    run_trump(trump_path)
+
+    num_configs = len(glob(os.path.join(trump_path, '*.conf')))
+    if num_configs == 1:
+        is_mono = True
+    elif num_configs == 2:
+        is_mono = False
+    else:
+        raise Exception('{} TRUMP configurations found (expecting either 1 or 2)'.format(num_configs))
+
+    run_trump(trump_path, is_mono)
     prep_md_sim()
     run_md_sim()
 
 
-def run_trump(trump_path):
+def run_trump(trump_path, is_mono):
     rts = generate_trump_mc(trump_path)
     try:
         utils.rts_to_ROOT(rts)
     except AssertionError: # this is not a critical step and can be fixed later
         print 'Warning! No ROOT file generated.'
-    split_fd_output()
+    if is_mono:
+        split_mono_fd_output(trump_path)
     run_fdplane()
 
 def prep_md_sim():
@@ -49,8 +61,6 @@ def generate_trump_mc(trump_path, regenerate=False):
     Return the final location of the .rts file.
     '''
 
-    confs = glob(os.path.join(trump_path, '*.conf'))
-    assert 0 < len(confs) <= 2, '{} configurations found (expecting either 1 or 2)'.format(len(confs))
 
     path_tokens = trump_path.split(os.path.sep)
     trump_exe = os.path.sep.join(path_tokens[:-4] + ['bin', 'trump.run'])
@@ -77,8 +87,39 @@ def generate_trump_mc(trump_path, regenerate=False):
 
     return rts
 
-def split_fd_output():
-    pass
+def split_mono_fd_output(trump_path):
+    """
+    Find the output from the monocular TRUMP simulation and split it
+    into one file per "part" by recording the indices of events belonging
+    to each part and using "dstsplit" to isolate them.
+    """
+    for site in ['br', 'lr']:
+        site_name = 'black-rock' if site == 'br' else 'long-ridge'
+        site_path = os.path.join(trump_path, site_name)
+        if not os.path.exists(site_path):
+            continue
+
+        dsts = glob(os.path.join(site_path, '*d??.dst.gz'))
+        assert len(dsts) == 1, 'Did not find unique mono DST in {}'.format(site_path)
+        dst = dsts[0]
+        cmd = 'dstdump -{site}raw {dst}'.format(site=site, dst=dst)
+        dump = sp.check_output(cmd, shell=True, stderr=sp.STDOUT)
+
+        events_by_part = defaultdict(list)
+        for i, part in enumerate(re.findall('[0-9]+(?=  event_code)', dump)):
+            events_by_part[part].append(i)
+
+        eventlist = os.path.join(site_path, 'want')
+        for part, events in events_by_part.items():
+            with open(eventlist, 'w') as want:
+                want.write('\n'.join(map(str, events)))
+
+            output = dst.replace('.dst.gz', 'p{}.dst.gz'.format(part))
+            cmd = 'dstsplit -w {} -o {} {}'.format(eventlist, output, dst)
+            sp.check_output(cmd, shell=True)
+
+        os.remove(dst)
+
 
 def run_fdplane():
     pass
