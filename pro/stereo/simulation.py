@@ -13,7 +13,7 @@ from glob import glob
 
 import utils
 
-def simulate_night(trump_path):
+def simulate_night(trump_path, geo_files):
     print trump_path
     assert os.path.isdir(trump_path), 'Not a directory: {}'.format(trump_path)
 
@@ -25,12 +25,12 @@ def simulate_night(trump_path):
     else:
         raise Exception('{} TRUMP configurations found (expecting either 1 or 2)'.format(num_configs))
 
-    run_trump(trump_path, is_mono)
+    run_trump(trump_path, is_mono, geo_files)
     prep_md_sim()
     run_md_sim()
 
 
-def run_trump(trump_path, is_mono):
+def run_trump(trump_path, is_mono, geo_files):
     rts, new_run = generate_trump_mc(trump_path)
     try:
         utils.rts_to_ROOT(rts)
@@ -44,7 +44,7 @@ def run_trump(trump_path, is_mono):
             site_paths[site] = site_path
     if is_mono and new_run:
         split_mono_fd_output(site_paths)
-    run_fdplane(site_paths)
+    run_fdplane(site_paths, geo_files)
 
 def prep_md_sim():
     make_evt()
@@ -122,15 +122,10 @@ def split_mono_fd_output(site_paths):
             cmd = 'dstsplit -w {} -o {} {}'.format(eventlist, output, dst)
             sp.check_output(cmd, shell=True)
 
-        os.remove(dst)
         break
 
 
-def run_fdplane(site_paths):
-    geo_files = {
-        'br': '$RTDATA/fdgeom/geobr_joint.dst.gz',
-        'lr': '$RTDATA/fdgeom/geolr_joint.dst.gz',
-    }
+def run_fdplane(site_paths, geo_files):
     for site, site_path in site_paths.items():
         dsts = glob(os.path.join(site_path, '*p??.dst.gz'))
         geo = geo_files[site]
@@ -139,6 +134,9 @@ def run_fdplane(site_paths):
             out = base_dst.replace('dst.gz', 'fdplane.out')
             cmd = '$TAHOME/fdplane/bin/fdplane.run -geo {} -output 1000 {} &> {}'.format(geo, base_dst, out)
             sp.check_output(cmd, shell=True, cwd=site_path)
+        junk_dsts = glob(os.path.join(site_path, '*d??.dst.gz'))
+        for dst in junk_dsts:
+            os.remove(dst)
 
 def make_evt():
     pass
@@ -163,7 +161,15 @@ def run_pass3():
     pass
 
 if __name__ == '__main__':
+    rtdata = os.getenv('RTDATA')
+    assert rtdata
     parser = argparse.ArgumentParser()
     parser.add_argument('trump_path')
+    parser.add_argument('-geobr', default=os.path.join(rtdata, 'fdgeom', 'geobr_joint.dst.gz'))
+    parser.add_argument('-geolr', default=os.path.join(rtdata, 'fdgeom', 'geolr_joint.dst.gz'))
     args = parser.parse_args()
-    simulate_night(args.trump_path)
+    geo_files = {
+        'br': args.geobr,
+        'lr': args.geolr,
+    }
+    simulate_night(args.trump_path, geo_files)
