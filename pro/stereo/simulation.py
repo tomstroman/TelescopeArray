@@ -31,14 +31,20 @@ def simulate_night(trump_path):
 
 
 def run_trump(trump_path, is_mono):
-    rts = generate_trump_mc(trump_path)
+    rts, new_run = generate_trump_mc(trump_path)
     try:
         utils.rts_to_ROOT(rts)
     except AssertionError: # this is not a critical step and can be fixed later
         print 'Warning! No ROOT file generated.'
-    if is_mono:
-        split_mono_fd_output(trump_path)
-    run_fdplane()
+    site_paths = {}
+    for site in ['br', 'lr']:
+        site_name = 'black-rock' if site == 'br' else 'long-ridge'
+        site_path = os.path.join(trump_path, site_name)
+        if os.path.exists(site_path):
+            site_paths[site] = site_path
+    if is_mono and new_run:
+        split_mono_fd_output(site_paths)
+    run_fdplane(site_paths)
 
 def prep_md_sim():
     make_evt()
@@ -69,6 +75,7 @@ def generate_trump_mc(trump_path, regenerate=False):
     output = os.path.join(trump_path, 'trump.out')
 
     if regenerate or not os.path.exists(output):
+        new_run = True
         cmd = '{} *.conf &> {}'.format(trump_exe, output)
         sp.check_output(cmd, shell=True, cwd=trump_path)
 
@@ -83,22 +90,19 @@ def generate_trump_mc(trump_path, regenerate=False):
             os.remove(rts)
         shutil.move(rts_files[0], trump_path)
     else:
+        new_run = False
         rts = glob(os.path.join(trump_path, '*.rts'))[0]
 
-    return rts
 
-def split_mono_fd_output(trump_path):
+    return rts, new_run
+
+def split_mono_fd_output(site_paths):
     """
     Find the output from the monocular TRUMP simulation and split it
     into one file per "part" by recording the indices of events belonging
     to each part and using "dstsplit" to isolate them.
     """
-    for site in ['br', 'lr']:
-        site_name = 'black-rock' if site == 'br' else 'long-ridge'
-        site_path = os.path.join(trump_path, site_name)
-        if not os.path.exists(site_path):
-            continue
-
+    for site, site_path in site_paths.items():
         dsts = glob(os.path.join(site_path, '*d??.dst.gz'))
         assert len(dsts) == 1, 'Did not find unique mono DST in {}'.format(site_path)
         dst = dsts[0]
@@ -119,11 +123,22 @@ def split_mono_fd_output(trump_path):
             sp.check_output(cmd, shell=True)
 
         os.remove(dst)
+        break
 
 
-def run_fdplane():
-    pass
-
+def run_fdplane(site_paths):
+    geo_files = {
+        'br': '$RTDATA/fdgeom/geobr_joint.dst.gz',
+        'lr': '$RTDATA/fdgeom/geolr_joint.dst.gz',
+    }
+    for site, site_path in site_paths.items():
+        dsts = glob(os.path.join(site_path, '*p??.dst.gz'))
+        geo = geo_files[site]
+        for dst in dsts:
+            base_dst = os.path.basename(dst)
+            out = base_dst.replace('dst.gz', 'fdplane.out')
+            cmd = '$TAHOME/fdplane/bin/fdplane.run -geo {} -output 1000 {} &> {}'.format(geo, base_dst, out)
+            sp.check_output(cmd, shell=True, cwd=site_path)
 
 def make_evt():
     pass
