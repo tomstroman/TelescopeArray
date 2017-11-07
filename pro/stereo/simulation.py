@@ -13,6 +13,8 @@ from glob import glob
 
 import utils
 
+from make_evt import make_evt
+
 def simulate_night(trump_path, geo_files):
     print trump_path
     assert os.path.isdir(trump_path), 'Not a directory: {}'.format(trump_path)
@@ -25,8 +27,8 @@ def simulate_night(trump_path, geo_files):
     else:
         raise Exception('{} TRUMP configurations found (expecting either 1 or 2)'.format(num_configs))
 
-    run_trump(trump_path, is_mono, geo_files)
-    prep_md_sim()
+    rts = run_trump(trump_path, is_mono, geo_files)
+    prep_md_sim(rts)
     run_md_sim()
 
 
@@ -45,9 +47,10 @@ def run_trump(trump_path, is_mono, geo_files):
     if is_mono and new_run:
         split_mono_fd_output(site_paths)
     run_fdplane(site_paths, geo_files)
+    return rts
 
-def prep_md_sim():
-    make_evt()
+def prep_md_sim(rts):
+    _make_evt(rts)
     make_in()
     prepare_path()
 
@@ -138,8 +141,9 @@ def run_fdplane(site_paths, geo_files):
         for dst in junk_dsts:
             os.remove(dst)
 
-def make_evt():
-    pass
+def _make_evt(rts):
+    evt = rts.replace('.rts', 'p00.txt_md.evt')
+    make_evt(rts, evt)
 
 def make_in():
     pass
