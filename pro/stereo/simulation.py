@@ -37,7 +37,7 @@ def prep_md_sim(rts):
     evt, num_events = _make_evt(rts)
     if num_events > 0:
         make_in(evt)
-        prepare_path()
+        prepare_path(evt)
     return num_events
 
 def run_md_sim():
@@ -76,8 +76,10 @@ def make_in(evt):
     print 'created', md_in
 
 
-def prepare_path():
-    pass
+def prepare_path(evt):
+    md_dir = os.path.join(os.path.dirname(evt), 'middle-drum')
+    if not os.path.isdir(md_dir):
+        os.mkdir(md_dir)
 
 
 def generate_mc2k12_mc():
