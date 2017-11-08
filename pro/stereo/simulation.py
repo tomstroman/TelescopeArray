@@ -34,8 +34,11 @@ def simulate_night(trump_path, geo_files):
 
 
 def run_md_sim(md_in, md_dir):
-    generate_mc2k12_mc(md_in, md_dir)
-    split_md_output()
+    dst = generate_mc2k12_mc(md_in, md_dir)
+    filtered_dst = filter_md_output(dst)
+    if filtered_dst is None:
+        return
+
     run_pass2()
     run_pass3()
 
@@ -51,9 +54,29 @@ def generate_mc2k12_mc(md_in, md_dir):
     cmd = '{} -o {} {} &> {}'.format(mc2k12_exe, dst, md_in, outfile)
     print cmd
     sp.check_output(cmd, shell=True)
+    return dst
 
-def split_md_output():
-    pass
+def filter_md_output(dst):
+    cmd = 'dstlist {}'.format(dst)
+    output = sp.check_output(cmd, shell=True)
+    lines = output.split('\n')[1:]
+    events_with_hraw1 = []
+    for i, line in enumerate(lines):
+        if 'hraw1' in line:
+            events_with_hraw1.append(i)
+    if not events_with_hraw1:
+        return None
+
+    new_dst = dst.replace('.md-sim.dst.gz', '.md.dst.gz')
+    want = dst.replace('.md-sim.dst.gz', '.want')
+    with open(want, 'w') as wantfile:
+        wantfile.write('\n'.join(map(str, events_with_hraw1)))
+        wantfile.write('\n')
+    cmd = 'dstsplit -w {} -o {} {}'.format(want, new_dst, dst)
+    sp.check_output(cmd, shell=True)
+    return new_dst
+
+
 
 def run_pass2():
     pass
