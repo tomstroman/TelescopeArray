@@ -36,8 +36,10 @@ def generate_trump_mc(trump_path, regenerate=False):
     '''
 
 
+    if trump_path.endswith(os.path.sep):
+        trump_path = trump_path[:-1]
     path_tokens = trump_path.split(os.path.sep)
-    trump_exe = os.path.sep.join(path_tokens[:-4] + ['bin', 'trump.run'])
+    trump_exe = os.path.sep.join(path_tokens[:-3] + ['bin', 'trump.run'])
     assert os.path.exists(trump_exe), 'TRUMP not found at {}'.format(trump_exe)
 
     output = os.path.join(trump_path, 'trump.out')
