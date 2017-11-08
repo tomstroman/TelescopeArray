@@ -5,6 +5,7 @@
 import argparse
 import os
 import re
+import subprocess as sp
 
 from glob import glob
 
@@ -26,22 +27,25 @@ def simulate_night(trump_path, geo_files):
 
     rts = run_trump(trump_path, is_mono, geo_files)
 
-    num_md_events = prep_md_sim(rts)
+    md_in, md_dir = prep_md_sim(rts)
 
-    if num_md_events > 0:
-        run_md_sim()
+    if md_in is not None:
+        run_md_sim(md_in, md_dir)
 
 
 
 def prep_md_sim(rts):
     evt, num_events = _make_evt(rts)
     if num_events > 0:
-        make_in(evt)
-        prepare_path(evt)
-    return num_events
+        md_in = make_in(evt)
+        md_dir = prepare_path(evt)
+    else:
+        md_in = None
+        md_dir = None
+    return md_in, md_dir
 
-def run_md_sim():
-    generate_mc2k12_mc()
+def run_md_sim(md_in, md_dir):
+    generate_mc2k12_mc(md_in, md_dir)
     split_md_output()
     run_pass2()
     run_pass3()
@@ -74,16 +78,27 @@ def make_in(evt):
     with open(md_in, 'w') as infile:
         infile.write(in_contents)
     print 'created', md_in
+    return md_in
 
 
 def prepare_path(evt):
     md_dir = os.path.join(os.path.dirname(evt), 'middle-drum')
     if not os.path.isdir(md_dir):
         os.mkdir(md_dir)
+    return md_dir
 
 
-def generate_mc2k12_mc():
-    pass
+def generate_mc2k12_mc(md_in, md_dir):
+    path_tokens = md_dir.split(os.path.sep)
+    mc2k12_exe = os.path.sep.join(path_tokens[:-4] + ['bin', 'mc2k12_main'])
+    assert os.path.exists(mc2k12_exe), 'mc2k12 not found at {}'.format(mc2k12_exe)
+
+    dst = os.path.join(md_dir, os.path.basename(md_in).replace('.txt_md.in', '.md-sim.dst.gz'))
+    outfile = md_in.replace('.txt_md.in', '.utafd.out')
+
+    cmd = '{} -o {} {} &> {}'.format(mc2k12_exe, dst, md_in, outfile)
+    print cmd
+    sp.check_output(cmd, shell=True)
 
 def split_md_output():
     pass
