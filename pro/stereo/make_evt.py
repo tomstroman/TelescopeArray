@@ -101,13 +101,14 @@ def make_evt(rtsf, evtfile):
         n += 1
 
     evt.close()
-    print 'Wrote {0} event{1}.'.format(n, '' if n == 1 else 's')
     if n == 0:
         os.remove(evtfile)
+    return n
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('rts_file')
     parser.add_argument('evt_file')
     args = parser.parse_args()
-    make_evt(args.rts_file, args.evt_file)
+    n = make_evt(args.rts_file, args.evt_file)
+    print 'Wrote {0} event{1}.'.format(n, '' if n == 1 else 's')

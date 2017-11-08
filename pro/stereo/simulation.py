@@ -30,7 +30,7 @@ def simulate_night(trump_path, geo_files):
 
 
 def prep_md_sim(rts):
-    _make_evt(rts)
+    evt, num_events = _make_evt(rts)
     make_in()
     prepare_path()
 
@@ -44,7 +44,8 @@ def run_md_sim():
 
 def _make_evt(rts):
     evt = rts.replace('.rts', 'p00.txt_md.evt')
-    make_evt(rts, evt)
+    num_events = make_evt(rts, evt)
+    return evt, num_events
 
 def make_in():
     pass
