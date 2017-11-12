@@ -34,13 +34,15 @@ def simulate_night(trump_path, geo_files):
 
 
 def run_md_sim(md_in, md_dir):
-    dst = generate_mc2k12_mc(md_in, md_dir)
+    dst, outfile = generate_mc2k12_mc(md_in, md_dir)
     filtered_dst = filter_md_output(dst)
     if filtered_dst is None:
         return
 
-    run_pass2()
-    run_pass3()
+    dst2 = run_pass2(filtered_dst, outfile)
+    if os.path.getsize(dst2) == 0:
+        return
+    dst3 = run_pass3(dst2, outfile)
 
 
 def generate_mc2k12_mc(md_in, md_dir):
@@ -54,7 +56,7 @@ def generate_mc2k12_mc(md_in, md_dir):
     cmd = '{} -o {} {} &> {}'.format(mc2k12_exe, dst, md_in, outfile)
     print cmd
     sp.check_output(cmd, shell=True)
-    return dst
+    return dst, outfile
 
 def filter_md_output(dst):
     cmd = 'dstlist {}'.format(dst)
@@ -78,11 +80,21 @@ def filter_md_output(dst):
 
 
 
-def run_pass2():
-    pass
+def run_pass2(dst, outfile):
+    dst2 = dst.replace('.dst.gz', '.ps2.dst.gz')
+# TODO: see if this needs to be made local
+    pass2_exe = '/home/tstroman/UTAFD/build/std-build/release/bin/stps2_main'
+    cmd = '{} -det 34 -o {} {} >> {} 2>&1'.format(pass2_exe, dst2, dst, outfile)
+    sp.check_output(cmd, shell=True)
+    return dst2
 
-def run_pass3():
-    pass
+def run_pass3(dst2, outfile):
+    dst3 = dst2.replace('md.ps2.dst.gz', '.down.dst.gz')
+# TODO: see if this needs to be made local
+    pass3_exe = '/home/tstroman/UTAFD/build/std-build/release/bin/stpln_main'
+    cmd = '{} -det 34 -o {} {} >> {} 2>&1'.format(pass3_exe, dst3, dst2, outfile)
+    sp.check_output(cmd, shell=True)
+    return dst3
 
 if __name__ == '__main__':
     rtdata = os.getenv('RTDATA')
