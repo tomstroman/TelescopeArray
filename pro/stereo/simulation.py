@@ -89,7 +89,7 @@ def run_pass2(dst, outfile):
     return dst2
 
 def run_pass3(dst2, outfile):
-    dst3 = dst2.replace('md.ps2.dst.gz', '.down.dst.gz')
+    dst3 = dst2.replace('.md.ps2.dst.gz', '.down.dst.gz')
 # TODO: see if this needs to be made local
     pass3_exe = '/home/tstroman/UTAFD/build/std-build/release/bin/stpln_main'
     cmd = '{} -det 34 -o {} {} >> {} 2>&1'.format(pass3_exe, dst3, dst2, outfile)
