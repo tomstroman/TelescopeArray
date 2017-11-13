@@ -44,7 +44,7 @@ def run_trump_sim(night, params):
     if not params['is_mc']:
         return None
 
-    runtrump_exe = params['stereo_run'].runtrump_sh
+    geometry_dsts = params['stereo_run'].params.geometry_dsts
     analysis = params['path']
     trump_path = os.path.join(analysis, str(night), 'trump')
 
@@ -56,7 +56,9 @@ def run_trump_sim(night, params):
     if os.path.exists(moslog):
         return None
 
-    cmd = 'mosenv -q -J{} -b -l -m320 -e {} {} &> {}'.format(night, runtrump_exe, trump_path, moslog)
+    cmd = 'mosenv -q -J{} -b -l -m320 -e python $TSTA/pro/stereo/simulation.py {} -geobr {} -geolr {} &> {}'.format(
+        night, trump_path, geometry_dsts['br'], geometry_dsts['lr'], moslog
+    )
 
     params['mosq'][night] = ('new', None)
     subprocess.Popen(cmd, shell=True)

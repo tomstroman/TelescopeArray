@@ -5,7 +5,7 @@ from db import stereo_run_db
 from db.database_wrapper import DatabaseWrapper
 from services import executables
 from services.stereo_run_params import StereoRunParams
-from services.templates import trump_conf, runtrump_sh, stereo_py
+from services.templates import trump_conf, stereo_py
 
 from . import run_management, directory
 import run_stereo_analysis
@@ -134,14 +134,8 @@ class StereoRun(object):
 
         if self.params.is_mc:
             self.trump_template = trump_conf.render_template(self)
-            self.runtrump_sh = os.path.join(self.bin_path, 'runtrump.sh')
-            contents = runtrump_sh.build_runtrump_sh(new_replacements=geometry_replacements)
-            with open(self.runtrump_sh, 'w') as shfile:
-                shfile.write(contents)
-            os.chmod(self.runtrump_sh, 0755)
         else:
             self.trump_template = None
-            self.runtrump_sh = None
 
         self.stereo_dot_py = os.path.join(self.bin_path, 'stereo.py')
         replacements = {
