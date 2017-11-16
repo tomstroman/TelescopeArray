@@ -100,14 +100,6 @@ def run(stereo_run, begin, end):
             properties=base_properties,
         )
 
-    print """
-    **** run_stereo_analysis ****
-    **** model: {0}
-    **** source: {1}
-    **** DB: {2}
-    """.format(model, source, dbfile)
-
-
     analysis_db = DatabaseWrapper(dbfile)
 
     date_status, params = _setup_run_get_dates(stereo_run, analysis_db)
@@ -119,7 +111,7 @@ def run(stereo_run, begin, end):
     for date in dates:
         now = datetime.utcnow()
         if (now - mosq_age).total_seconds() > mosq_poll_interval:
-            print 'Updating mosq list'
+            logging.info('Updating mosq list')
             mosq = _get_mosix_jobs()
             mosq_age = now
             params['mosq'] = mosq
@@ -128,11 +120,11 @@ def run(stereo_run, begin, end):
             date_status[date] = process_night(date, params, start_code=begin, end_code=end)
         except Exception as e:
             date_status[date] = 'exception'
-            print e
+            logging.warn('Exception encountered: %s', e)
             #raise
 
         if date_status[date] in ignorable_night_reasons:
-            print 'This date will be ignored in future runs.'
+            logging.info('This date will be ignored in future runs: %s.', date)
             analysis_db.insert_row('INSERT INTO StereoIgnoreNights VALUES(?, ?, ?)', (date, date_status[date], stereo_run.modelsource))
 
     return date_status, params
