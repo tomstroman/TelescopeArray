@@ -26,7 +26,11 @@ temp_properties = {'DTIME': str(event_interval),
                    'SPECTRUM_SLOPES': '2.99 3.25 2.81 5.1'
                    }
 
-ignorable_night_reasons = ['no TRUMP conf found', 'analysis complete']
+ignorable_night_reasons = [
+    'no TRUMP conf found',
+    'no TRUMP triggers',
+    'analysis complete',
+]
 
 
 mosq_poll_interval = 15 # seconds
@@ -137,7 +141,7 @@ def report(date_status):
             status_dates[status].append(date)
         except KeyError:
             status_dates[status] = [date]
-    for status, dates in status_dates.items():
+    for status, dates in sorted(status_dates.items(), key=lambda x: x[0]):
         print "Status '{}': {} night(s)".format(status, len(dates))
 
     print 'Returning "status_dates" dict for more details.'

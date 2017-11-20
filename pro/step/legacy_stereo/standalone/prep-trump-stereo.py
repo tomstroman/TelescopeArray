@@ -57,6 +57,10 @@ for site, siteid in {'br': 0, 'lr': 1}.items():
         print "Didn't find", ped
         continue
 
+    if os.path.getsize(ped) < 100: # TODO: store this elsewhere instead of hard-coding here
+        print "Pedestal probably corrupt:", ped
+        continue
+
 # create the output location
     outdir = os.path.dirname(os.path.abspath(sys.argv[1]))
     outdir += '/' + ymd + '/trump'

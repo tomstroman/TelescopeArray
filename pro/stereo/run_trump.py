@@ -76,6 +76,10 @@ def split_mono_fd_output(site_paths):
         dsts = glob(os.path.join(site_path, '*d??.dst.gz'))
         assert len(dsts) == 1, 'Did not find unique mono DST in {}'.format(site_path)
         dst = dsts[0]
+
+        if os.path.getsize(dst) < 100: # TODO: store this elsewhere instead of hard-coding here
+            break
+
         cmd = 'dstdump -{site}raw {dst}'.format(site=site, dst=dst)
         dump = sp.check_output(cmd, shell=True, stderr=sp.STDOUT)
 

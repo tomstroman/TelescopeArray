@@ -1,4 +1,5 @@
 import logging
+import os
 
 def find_or_create_base_run(stereo_run, supplied_name):
     """

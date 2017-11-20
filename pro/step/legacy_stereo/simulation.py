@@ -94,7 +94,7 @@ def verify_sim(night, params):
     if not moslog:
         return 'Mosix output empty'
 
-    skip_md = 'No triggered events; nothing to simulate on {}'.format(night) in moslog
+    skip_md = 'Simulation event count: 0' in moslog or 'found 0 part(s)' in moslog
 
     with open(trump_log, 'r') as outf:
         try:
@@ -113,8 +113,8 @@ def verify_sim(night, params):
 
     if tmax == 0:
         print 'No TRUMP triggers!'
-        assert skip_md
-        return None
+        assert skip_md, 'skip_md not set'
+        return 'no TRUMP triggers'
 
     if not skip_md:
         md_out = os.path.join(trump_path, '{}p00.utafd.out'.format(ymd))
