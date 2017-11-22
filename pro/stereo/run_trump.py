@@ -8,6 +8,8 @@ from glob import glob
 
 import utils
 
+class NoRTSFile(Exception):
+    pass
 
 def run_trump(trump_path, is_mono, geo_files):
     rts, new_run = generate_trump_mc(trump_path)
@@ -50,9 +52,11 @@ def generate_trump_mc(trump_path, regenerate=False):
         sp.check_output(cmd, shell=True, cwd=trump_path)
 
         rts_files = glob(os.path.join(trump_path, '*', '*.rts'))
-        if len(rts_files) <> 1:
-            print 'Zero or multiple RTS files found:', rts_files
-
+        if not rts_files:
+            print 'No RTS found!'
+            raise NoRTSFile
+        elif len(rts_files) > 1:
+            print 'Multiple RTS files found:', rts_files
         bn = os.path.basename(rts_files[0])
         rts = os.path.join(trump_path, bn)
 
@@ -61,7 +65,17 @@ def generate_trump_mc(trump_path, regenerate=False):
         shutil.move(rts_files[0], trump_path)
     else:
         new_run = False
-        rts = glob(os.path.join(trump_path, '*.rts'))[0]
+        rts_files = glob(os.path.join(trump_path, '*.rts'))
+        if len(rts_files) == 0:
+            rts_files = glob(os.path.join(trump_path, '*', '*.rts'))
+        if len(rts_files) <> 1:
+            print 'Zero or multiple RTS files found:', rts_files
+            raise NoRTSFile
+        else:
+            bn = os.path.basename(rts_files[0])
+            rts = os.path.join(trump_path, bn)
+            shutil.move(rts_files[0], trump_path)
+
 
 
     return rts, new_run

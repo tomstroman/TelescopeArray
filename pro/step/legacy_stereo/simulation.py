@@ -54,7 +54,12 @@ def run_trump_sim(night, params):
     moslog = os.path.join(analysis, 'logs', 'trump-{}.mosout'.format(night))
 
     if os.path.exists(moslog):
-        return None
+        with open(moslog, 'r') as mos:
+            moslog_content = mos.read()
+        if 'MOSRUN: Lost communication' not in moslog_content:
+            return None
+        else:
+            os.remove(moslog)
 
     cmd = 'mosenv -q -J{} -b -l -m320 -e python $TSTA/pro/stereo/simulation.py {} -geobr {} -geolr {} &> {}'.format(
         night, trump_path, geometry_dsts['br'], geometry_dsts['lr'], moslog

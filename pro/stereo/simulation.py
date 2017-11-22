@@ -40,7 +40,7 @@ def run_md_sim(md_in, md_dir):
         return
 
     dst2 = run_pass2(filtered_dst, outfile)
-    if os.path.getsize(dst2) == 0:
+    if os.path.getsize(dst2) < 100:
         return
     dst3 = run_pass3(dst2, outfile)
 
