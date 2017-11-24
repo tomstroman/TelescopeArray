@@ -61,7 +61,7 @@ def run_trump_sim(night, params):
         else:
             os.remove(moslog)
 
-    cmd = 'mosenv -q -J{} -b -l -m320 -e python $TSTA/pro/stereo/simulation.py {} -geobr {} -geolr {} &> {}'.format(
+    cmd = 'mosenv -q -J{} -b -l -m320 -e python $TSTA/pro/stereo/simulation/run_simulation.py {} -geobr {} -geolr {} &> {}'.format(
         night, trump_path, geometry_dsts['br'], geometry_dsts['lr'], moslog
     )
 
