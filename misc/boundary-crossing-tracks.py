@@ -25,14 +25,14 @@ SIGMA_MIN = 6.0
 
 def dump_and_parse(dst_files):
     for dst_file in dst_files:
-        print dst_file
+#        print dst_file
         cmd = 'dstdump +brplane +lrplane {}'.format(dst_file)
         dump = sp.check_output(cmd, shell=True)
         events = dump.split(EVENT_SEPARATOR)[1:] # first entry is just the filename; skip it
         for event in events:
-            is_good, row_times = process(event)
+            is_good, column, row_times = process(event)
             if is_good:
-                print ' '.join([str(time) for row, time in sorted(row_times.items(), key=lambda x: -x[0])])
+                print 2*column, ' '.join([str(time) for row, time in sorted(row_times.items(), key=lambda x: -x[0])])
 #            else:
 #                print 'Bad event'
 
@@ -46,22 +46,28 @@ def process(event):
 
         good_tubes = re.findall(PMT_REGEX, event)
         boundary_tubes = defaultdict(list)
+        columns = set()
         for tube in good_tubes:
             cam, pmt, npe, time, sigma = [f(n) for f,n in zip([int, int, float, float, float], tube)]
             if sigma > SIGMA_MIN:
                 row = (16 if (cam % 2 == 0) else 0) + (pmt % 16) # based on camera geometry
+                column = int(cam / 2)
+                columns.add(column)
                 if 13 <= row < 19:
                     boundary_tubes[row].append((npe, time))
 #        print 'boundary_tubes:', boundary_tubes.keys()
+        assert len(columns) == 1
         assert len(boundary_tubes) == 6
+
+
 
         row_times = {
             row: weighted_average(npe_times) for row, npe_times in boundary_tubes.items()
         }
-        return True, row_times
+        return True, list(columns)[0], row_times
 
     except AssertionError:
-        return False, None
+        return False, None, None
 
 def weighted_average(npe_times):
     if len(npe_times) == 1:
