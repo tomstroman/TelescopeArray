@@ -23,23 +23,25 @@ PMT_REGEX = re.compile(' *\d+ \[ cam +(\d+) tube +(\d+) \] +([\d\.]+) +([\d\.]+)
 SIGMA_MIN = 6.0
 
 
-def dump_and_parse(dst_file):
-    cmd = 'dstdump +brplane +lrplane {}'.format(dst_file)
-    dump = sp.check_output(cmd, shell=True)
-    events = dump.split(EVENT_SEPARATOR)[1:] # first entry is just the filename; skip it
-    for event in events:
-        is_good, row_times = process(event)
-        if is_good:
-            print 'Good event with {} tubes'.format(len(row_times))
-        else:
-            print 'Bad event'
+def dump_and_parse(dst_files):
+    for dst_file in dst_files:
+        print dst_file
+        cmd = 'dstdump +brplane +lrplane {}'.format(dst_file)
+        dump = sp.check_output(cmd, shell=True)
+        events = dump.split(EVENT_SEPARATOR)[1:] # first entry is just the filename; skip it
+        for event in events:
+            is_good, row_times = process(event)
+            if is_good:
+                print ' '.join([str(time) for row, time in sorted(row_times.items(), key=lambda x: -x[0])])
+#            else:
+#                print 'Bad event'
 
 def process(event):
     matches = re.findall(SDPQ_REGEX, event)
     try:
         assert len(matches) == 1
         sdp_theta = float(matches[0])
-        print 'sdp_theta:', sdp_theta
+#        print 'sdp_theta:', sdp_theta
         assert SDPQ_MIN < sdp_theta < SDPQ_MAX
 
         good_tubes = re.findall(PMT_REGEX, event)
@@ -50,7 +52,7 @@ def process(event):
                 row = (16 if (cam % 2 == 0) else 0) + (pmt % 16) # based on camera geometry
                 if 13 <= row < 19:
                     boundary_tubes[row].append((npe, time))
-        print 'boundary_tubes:', boundary_tubes.keys()
+#        print 'boundary_tubes:', boundary_tubes.keys()
         assert len(boundary_tubes) == 6
 
         row_times = {
@@ -63,7 +65,7 @@ def process(event):
 
 def weighted_average(npe_times):
     if len(npe_times) == 1:
-        return npe_times[1]
+        return npe_times[0][1]
 
     numerator = sum([npe*time for npe, time in npe_times])
     denominator = sum([npe for npe, time in npe_times])
@@ -71,6 +73,6 @@ def weighted_average(npe_times):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('dst')
+    parser.add_argument('dsts', nargs='+')
     args = parser.parse_args()
-    events = dump_and_parse(args.dst)
+    events = dump_and_parse(args.dsts)
