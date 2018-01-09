@@ -22,9 +22,10 @@
 import argparse
 import logging
 import os
+import re
 
 from db.database_wrapper import DatabaseWrapper
-from utils import log
+from utils import log, tawiki
 
 
 db_wiki = 'db/wiki.db'
@@ -35,6 +36,14 @@ def data_report(reset=False, console_mirror=False):
     if reset or not os.path.exists(db_wiki):
         logging.warn('Creating new database at %s', db_wiki)
         init_db(db_wiki)
+
+    db = DatabaseWrapper(db_wiki)
+
+    update_from_wiki(db)
+
+    sql = 'SELECT count() FROM Dates'
+    nights = db.retrieve(sql)[0][0]
+    logging.info('Database contains %s nights', nights)
 
 
 def init_db(dbfile):
@@ -50,6 +59,21 @@ def init_db(dbfile):
             cur.execute('CREATE TABLE {0}({1})'.format(table, structure))
 
         cur.executemany('INSERT INTO Sites VALUES(?, ?, ?, ?)', static_data.sites)
+
+
+def update_from_wiki(db):
+    for year in [2017]:
+        html = tawiki.get_page(year)
+        get_dark_hours_by_date(html)
+
+
+DARK = re.compile('<td>[[0-9]{1,2}\.[0-9]{2}</td>')
+def get_dark_hours_by_date(html):
+    dark = {}
+    for line in html.split('\n'):
+        if DARK.match(line):
+            logging.info('Matched line: %s', line.split('</td>')[0])
+            pass # TODO: parse line
 
 
 if __name__ == '__main__':
