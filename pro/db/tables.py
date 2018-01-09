@@ -42,3 +42,11 @@ stereo_run_tables = [
 
     ('Showlibs', 'model TEXT REFERENCES Models, species INTEGER REFERENCES Species, dstfile TEXT PRIMARY KEY'),
 ]
+
+fd_daq_tables = [
+    ('Dates', 'id INTEGER PRIMARY KEY, darkhours REAL DEFAULT 0'),
+
+    ('Sites', 'id INTEGER PRIMARY KEY, shortname TEXT, name TEXT, longname TEXT'),
+
+    ('WikiLogs', 'date INTEGER REFERENCES Dates, site INTEGER REFERENCES Sites, file TEXT, PRIMARY KEY (date, site)'),
+]
