@@ -23,6 +23,7 @@ import argparse
 import logging
 import os
 import re
+import time
 
 from db.database_wrapper import DatabaseWrapper
 from utils import log, tawiki
@@ -62,7 +63,8 @@ def init_db(dbfile):
 
 
 def update_from_wiki(db):
-    for year in range(2009, 2018):
+    for year in [2007]:
+    #for year in range(2009, 2018):
         html = tawiki.get_page(year)
         dark = get_dark_hours_by_date(html)
 
@@ -70,8 +72,9 @@ def update_from_wiki(db):
         logging.info('Found dark hours for %s night(s) from %s to %s', len(nights), nights[0], nights[-1])
 
 
-DARK = re.compile('<td>([0-9]{1,2}\.[0-9]{2})</td>')
-LOG = re.compile('y([0-9]{4})m([0-9]{2})d([0-9]{2})\.[abdelmrt]+\.log')
+DARK = re.compile('<td>([0-9]{1,2}\.[0-9]{2})</td>') # matches cells like <td>6.84</td>
+LOG = re.compile('y([0-9]{4})m([0-9]{2})d([0-9]{2})\.(?:brm?|lr|md|sd)\.log') # like y2018m01d10.brm.log
+TIME = re.compile('\w{3} (\w{3} \d+ \d{4}) \d{2}:\d{2} (?:UT|GMT)') # like Thu Jan 10 2018 05:33 GMT
 def get_dark_hours_by_date(html):
     dark = {}
     for line in html.split('\n'):
@@ -86,13 +89,21 @@ def get_dark_hours_by_date(html):
 
 def parse_line(line):
     dark_hours = DARK.match(line).groups()[0]
+    times = TIME.findall(line)
+    if times:
+        ymds = [time.strftime('%Y%m%d', time.strptime(t, '%b %d %Y')) for t in times]
+        if len(set(ymds)) == 1:
+            date = ymds[0]
+            return date, dark_hours
+
+    logging.warn('Could not interpret human-readable date; looking for log files')
     logs = LOG.findall(line)
     if logs:
         ymds = [y+m+d for y,m,d in logs]
         if len(set(ymds)) == 1:
             date = ymds[0]
             return date, dark_hours
-        raise Exception('Multiple dates!')
+        raise Exception('Multiple dates! {}'.format(ymds))
     raise Exception('No logs!')
 
 
