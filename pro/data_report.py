@@ -62,9 +62,10 @@ def init_db(dbfile):
         cur.executemany('INSERT INTO Sites VALUES(?, ?, ?, ?)', static_data.sites)
 
 
+START_YEAR = 2007
+CUTOFF_YEAR = 2018 # will not be included in range()
 def update_from_wiki(db):
-    for year in [2007]:
-    #for year in range(2009, 2018):
+    for year in range(START_YEAR, CUTOFF_YEAR):
         html = tawiki.get_page(year)
         dark = get_dark_hours_by_date(html)
 
@@ -95,8 +96,8 @@ def parse_line(line):
         if len(set(ymds)) == 1:
             date = ymds[0]
             return date, dark_hours
+        logging.warn('Could not interpret human-readable date; looking for log files\n%s', line)
 
-    logging.warn('Could not interpret human-readable date; looking for log files')
     logs = LOG.findall(line)
     if logs:
         ymds = [y+m+d for y,m,d in logs]
