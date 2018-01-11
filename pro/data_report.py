@@ -62,18 +62,38 @@ def init_db(dbfile):
 
 
 def update_from_wiki(db):
-    for year in [2017]:
+    for year in range(2009, 2018):
         html = tawiki.get_page(year)
-        get_dark_hours_by_date(html)
+        dark = get_dark_hours_by_date(html)
+
+        nights = sorted(dark.keys())
+        logging.info('Found dark hours for %s night(s) from %s to %s', len(nights), nights[0], nights[-1])
 
 
-DARK = re.compile('<td>[[0-9]{1,2}\.[0-9]{2}</td>')
+DARK = re.compile('<td>([0-9]{1,2}\.[0-9]{2})</td>')
+LOG = re.compile('y([0-9]{4})m([0-9]{2})d([0-9]{2})\.[abdelmrt]+\.log')
 def get_dark_hours_by_date(html):
     dark = {}
     for line in html.split('\n'):
         if DARK.match(line):
-            logging.info('Matched line: %s', line.split('</td>')[0])
-            pass # TODO: parse line
+            try:
+                date, dark_hours = parse_line(line)
+                dark[date] = dark_hours
+            except Exception as err:
+                logging.error('Error %s when processing line:\n%s', err, line)
+    return dark
+
+
+def parse_line(line):
+    dark_hours = DARK.match(line).groups()[0]
+    logs = LOG.findall(line)
+    if logs:
+        ymds = [y+m+d for y,m,d in logs]
+        if len(set(ymds)) == 1:
+            date = ymds[0]
+            return date, dark_hours
+        raise Exception('Multiple dates!')
+    raise Exception('No logs!')
 
 
 if __name__ == '__main__':
