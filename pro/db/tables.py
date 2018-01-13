@@ -44,7 +44,7 @@ stereo_run_tables = [
 ]
 
 fd_daq_tables = [
-    ('Dates', 'id INTEGER PRIMARY KEY, darkhours REAL DEFAULT 0'),
+    ('Dates', 'date INTEGER PRIMARY KEY, darkhours REAL DEFAULT 0'),
 
     ('Sites', 'id INTEGER PRIMARY KEY, shortname TEXT, name TEXT, longname TEXT'),
 

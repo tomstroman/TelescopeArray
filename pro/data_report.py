@@ -34,17 +34,20 @@ db_wiki = 'db/wiki.db'
 
 def data_report(reset=False, console_mirror=False):
     log_name = log.set_up_log(name='report_log.txt', console_mirror=console_mirror)
+    is_db_new = False
     if reset or not os.path.exists(db_wiki):
         logging.warn('Creating new database at %s', db_wiki)
         init_db(db_wiki)
+        is_db_new = True
 
     db = DatabaseWrapper(db_wiki)
 
-    update_from_wiki(db)
+    if is_db_new:
+        update_from_wiki(db)
 
-    sql = 'SELECT count() FROM Dates'
-    nights = db.retrieve(sql)[0][0]
-    logging.info('Database contains %s nights', nights)
+    sql = 'SELECT count(), sum(darkhours) FROM Dates'
+    nights, dark_hours = db.retrieve(sql)[0]
+    logging.info('Database contains %s nights with %s dark hours', nights, dark_hours)
 
 
 def init_db(dbfile):
@@ -65,12 +68,16 @@ def init_db(dbfile):
 START_YEAR = 2007
 CUTOFF_YEAR = 2018 # will not be included in range()
 def update_from_wiki(db):
+    existing_rows = [r[0] for r in db.retrieve('SELECT date FROM Dates')]
     for year in range(START_YEAR, CUTOFF_YEAR):
         html = tawiki.get_page(year)
         dark = get_dark_hours_by_date(html)
 
         nights = sorted(dark.keys())
-        logging.info('Found dark hours for %s night(s) from %s to %s', len(nights), nights[0], nights[-1])
+        logging.info('Found %s dark hours for %s night(s) from %s to %s', sum(dark.values()), len(nights), nights[0], nights[-1])
+        new_dark_tuples = [(night, dark[night]) for night in nights if night not in existing_rows]
+
+        db.insert_rows('INSERT INTO Dates VALUES(?, ?)', tuple(new_dark_tuples))
 
 
 DARK = re.compile('<td>([0-9]{1,2}\.[0-9]{2})</td>') # matches cells like <td>6.84</td>
@@ -89,7 +96,7 @@ def get_dark_hours_by_date(html):
 
 
 def parse_line(line):
-    dark_hours = DARK.match(line).groups()[0]
+    dark_hours = float(DARK.match(line).groups()[0])
     times = TIME.findall(line)
     if times:
         ymds = [time.strftime('%Y%m%d', time.strptime(t, '%b %d %Y')) for t in times]
