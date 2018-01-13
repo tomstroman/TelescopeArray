@@ -48,5 +48,5 @@ fd_daq_tables = [
 
     ('Sites', 'id INTEGER PRIMARY KEY, shortname TEXT, name TEXT, longname TEXT'),
 
-    ('WikiLogs', 'date INTEGER REFERENCES Dates, site INTEGER REFERENCES Sites, file TEXT, PRIMARY KEY (date, site)'),
+    ('WikiLogs', 'date INTEGER REFERENCES Dates, site INTEGER REFERENCES Sites, file TEXT PRIMARY KEY'),
 ]

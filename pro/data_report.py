@@ -67,11 +67,18 @@ def init_db(dbfile):
 
 START_YEAR = 2007
 CUTOFF_YEAR = 2018 # will not be included in range()
+
+site_to_site_id = {
+    'brm' : 0,
+    'lr'  : 1,
+    'md'  : 2,
+}
+
 def update_from_wiki(db):
     existing_rows = [r[0] for r in db.retrieve('SELECT date FROM Dates')]
     for year in range(START_YEAR, CUTOFF_YEAR):
         html = tawiki.get_page(year)
-        dark = get_dark_hours_by_date(html)
+        dark, site_logs = get_dark_hours_logs_by_date(html)
 
         nights = sorted(dark.keys())
         logging.info('Found %s dark hours for %s night(s) from %s to %s', sum(dark.values()), len(nights), nights[0], nights[-1])
@@ -79,20 +86,33 @@ def update_from_wiki(db):
 
         db.insert_rows('INSERT INTO Dates VALUES(?, ?)', tuple(new_dark_tuples))
 
+        for date, sites in site_logs.items():
+            for site in sites:
+                try:
+                    db.insert_row('INSERT INTO Wikilogs VALUES(?, ?, ?)', 
+                        (date, site_to_site_id[site[1]], site[0].lower())
+                    )
+                except Exception as err:
+                    logging.error('Exception: %s executing SQL for %s, %s', err, date, sites)
+
 
 DARK = re.compile('<td>([0-9]{1,2}\.[0-9]{2})</td>') # matches cells like <td>6.84</td>
 LOG = re.compile('y([0-9]{4})m([0-9]{2})d([0-9]{2})\.(?:brm?|lr|md|sd)\.log') # like y2018m01d10.brm.log
 TIME = re.compile('\w{3} (\w{3} \d+ \d{4}) \d{2}:\d{2} (?:UT|GMT)') # like Thu Jan 10 2018 05:33 GMT
-def get_dark_hours_by_date(html):
+def get_dark_hours_logs_by_date(html):
     dark = {}
+    site_logs = {}
     for line in html.split('\n'):
         if DARK.match(line):
             try:
                 date, dark_hours = parse_line(line)
                 dark[date] = dark_hours
+                sites_with_logs = parse_line_logs(line, date)
+                if sites_with_logs:
+                    site_logs[date] = sites_with_logs
             except Exception as err:
                 logging.error('Error %s when processing line:\n%s', err, line)
-    return dark
+    return dark, site_logs
 
 
 def parse_line(line):
@@ -113,6 +133,13 @@ def parse_line(line):
             return date, dark_hours
         raise Exception('Multiple dates! {}'.format(ymds))
     raise Exception('No logs!')
+
+
+YMD = re.compile('(\d{4})(\d{2})(\d{2})')
+def parse_line_logs(line, date):
+    file_date = 'Y{}m{}d{}'.format(*YMD.match(date).groups())
+    existing_logs = re.findall('title="({}\.(brm|lr|md)\.log)">'.format(file_date), line)
+    return existing_logs
 
 
 if __name__ == '__main__':
