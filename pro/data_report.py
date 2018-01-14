@@ -32,6 +32,12 @@ from utils import log, tawiki
 db_wiki = 'db/wiki.db'
 
 
+site_to_site_id = {
+    'brm' : 0,
+    'lr'  : 1,
+    'md'  : 2,
+}
+
 def data_report(reset=False, console_mirror=False):
     log_name = log.set_up_log(name='report_log.txt', console_mirror=console_mirror)
     is_db_new = False
@@ -48,6 +54,18 @@ def data_report(reset=False, console_mirror=False):
     sql = 'SELECT count(), sum(darkhours) FROM Dates'
     nights, dark_hours = db.retrieve(sql)[0]
     logging.info('Database contains %s nights with %s dark hours', nights, dark_hours)
+    sql = 'SELECT count(), sum(darkhours) FROM Dates WHERE darkhours > 3.0'
+    run_nights, run_darkhours = db.retrieve(sql)[0]
+    logging.info('%s nights with > 3.0 dark hours for %s hours', run_nights, run_darkhours)
+    for site_id in range(3):
+        sql = 'SELECT count(), sum(d.darkhours) FROM Dates AS d JOIN Wikilogs AS w ON d.date=w.date WHERE w.site={site_id} AND d.darkhours > 3.0'.format(
+            site_id=site_id,
+        )
+        site_nights, site_darkhours = db.retrieve(sql)[0]
+        logging.info('Site %s has logs for %s nights with %s dark hours (%0.3f of all >3.0-hour nights)',
+            site_id, site_nights, site_darkhours, float(site_darkhours)/float(run_darkhours)
+        )
+
 
 
 def init_db(dbfile):
@@ -68,11 +86,6 @@ def init_db(dbfile):
 START_YEAR = 2007
 CUTOFF_YEAR = 2018 # will not be included in range()
 
-site_to_site_id = {
-    'brm' : 0,
-    'lr'  : 1,
-    'md'  : 2,
-}
 
 def update_from_wiki(db):
     existing_rows = [r[0] for r in db.retrieve('SELECT date FROM Dates')]
