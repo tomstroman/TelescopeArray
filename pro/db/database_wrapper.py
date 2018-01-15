@@ -8,6 +8,20 @@ class DatabaseWrapper(object):
 
     def __init__(self, db):
         self.db = db
+        self._attachments = []
+
+    def attach(self, db, name):
+        self._attachments.append(
+            (db, name),
+        )
+
+    def detach(self, db):
+        self._attachments = [a for a in self._attachments if a[0] != db]
+
+    def _attach_all(self, cur):
+        for db, name in self._attachments:
+            sql = "ATTACH '{}' AS {}".format(db, name)
+            cur.execute(sql)
 
     def report(self):
         """
@@ -37,8 +51,10 @@ class DatabaseWrapper(object):
 
         with sqlite3.connect(self.db) as con:
             cur = con.cursor()
+            self._attach_all(cur)
 
             cur.execute(sql)
+
             rows = cur.fetchall()
         return rows
 

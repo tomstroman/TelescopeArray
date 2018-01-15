@@ -30,7 +30,7 @@ from utils import log, tawiki
 
 
 db_wiki = 'db/wiki.db'
-
+db_fadc = 'db/fadc_data.db'
 
 site_to_site_id = {
     'brm' : 0,
@@ -62,9 +62,17 @@ def data_report(reset=False, console_mirror=False):
             site_id=site_id,
         )
         site_nights, site_darkhours = db.retrieve(sql)[0]
-        logging.info('Site %s has logs for %s nights with %s dark hours (%0.3f of all >3.0-hour nights)',
+        logging.info('Site %s has wiki logs for %s nights with %s dark hours (%0.3f of all >3.0-hour nights)',
             site_id, site_nights, site_darkhours, float(site_darkhours)/float(run_darkhours)
         )
+
+    db.attach(db_fadc, 'FDDB')
+    for site_id in range(3):
+        sql = 'SELECT count() FROM FDDB.Runnights AS r JOIN Wikilogs AS w ON r.date=w.date AND r.site=w.site WHERE w.site={site_id}'.format(
+            site_id=site_id,
+        )
+        site_fdnights = db.retrieve(sql)[0][0]
+        logging.info('Site %s has tadserv logs for %s nights', site_id, site_fdnights)
 
 
 
