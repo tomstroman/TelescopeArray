@@ -29,6 +29,7 @@ from db.database_wrapper import DatabaseWrapper
 from utils import log, tawiki
 
 
+MAX_DATE = 20161111
 db_wiki = 'db/wiki.db'
 db_fadc = 'db/fadc_data.db'
 
@@ -40,6 +41,7 @@ site_to_site_id = {
 
 def data_report(reset=False, console_mirror=False):
     log_name = log.set_up_log(name='report_log.txt', console_mirror=console_mirror)
+    logging.info('MAX_DATE: %s', MAX_DATE)
     is_db_new = False
     if reset or not os.path.exists(db_wiki):
         logging.warn('Creating new database at %s', db_wiki)
@@ -57,22 +59,42 @@ def data_report(reset=False, console_mirror=False):
     sql = 'SELECT count(), sum(darkhours) FROM Dates WHERE darkhours > 3.0'
     run_nights, run_darkhours = db.retrieve(sql)[0]
     logging.info('%s nights with > 3.0 dark hours for %s hours', run_nights, run_darkhours)
+
+    db.attach(db_fadc, 'FDDB')
     for site_id in range(3):
         sql = 'SELECT count(), sum(d.darkhours) FROM Dates AS d JOIN Wikilogs AS w ON d.date=w.date WHERE w.site={site_id} AND d.darkhours > 3.0'.format(
             site_id=site_id,
         )
-        site_nights, site_darkhours = db.retrieve(sql)[0]
+        site_night_count, site_darkhours = db.retrieve(sql)[0]
+
         logging.info('Site %s has wiki logs for %s nights with %s dark hours (%0.3f of all >3.0-hour nights)',
-            site_id, site_nights, site_darkhours, float(site_darkhours)/float(run_darkhours)
+            site_id, site_night_count, site_darkhours, float(site_darkhours)/float(run_darkhours)
         )
 
-    db.attach(db_fadc, 'FDDB')
-    for site_id in range(3):
-        sql = 'SELECT count() FROM FDDB.Runnights AS r JOIN Wikilogs AS w ON r.date=w.date AND r.site=w.site WHERE w.site={site_id}'.format(
+        sql = 'SELECT w.file, d.darkhours FROM Wikilogs AS w JOIN Dates AS d ON d.date=w.date WHERE site={site_id} AND d.date<{max_date}'.format(
+            site_id=site_id,
+            max_date=MAX_DATE,
+        )
+        site_nights_hours = db.retrieve(sql)
+        site_hours = {night: hours for night, hours in site_nights_hours}
+        site_nights = set([row[0] for row in site_nights_hours])
+
+        sql = 'SELECT w.file FROM FDDB.Runnights AS r JOIN Wikilogs AS w ON r.date=w.date AND r.site=w.site WHERE w.site={site_id}'.format(
             site_id=site_id,
         )
-        site_fdnights = db.retrieve(sql)[0][0]
-        logging.info('Site %s has tadserv logs for %s nights', site_id, site_fdnights)
+        site_fdnights = set([row[0] for row in db.retrieve(sql)])
+        logging.info('Site %s has tadserv logs for %s nights', site_id, len(site_fdnights))
+        missing_nights = site_nights - site_fdnights
+
+        if site_id == 2:
+            continue
+        logging.info('Pre-%s nights (hours) missing from tadserv:\n%s',
+            MAX_DATE,
+            '\n'.join(['{}: {}'.format(night, site_hours[night]) for night in sorted(list(missing_nights))])
+        )
+
+
+
 
 
 
