@@ -7,6 +7,7 @@ from auth_ta import tawiki_username, tawiki_password
 sites = ['brm', 'lr', 'md']
 
 
+WIKI = 'http://www.telescopearray.org/tawiki/index.php'
 def get_page(year):
   '''
   Download the "run logs and signups" MediaWiki page for the requested year 
@@ -17,23 +18,31 @@ def get_page(year):
     print 'Error: year must be between [2007,{0}]'.format(this_year)
     return None
   
-  wiki = 'http://www.telescopearray.org/tawiki/index.php'
-  tadurl = wiki + '/{0}_Run_Signups'.format(year)
+  tadurl = WIKI + '/{0}_Run_Signups'.format(year)
 
-  # this authentication procedure is based on the HOWTO
-  # at https://docs.python.org/2/howto/urllib2.html
-  
-  authwiki = urllib2.HTTPPasswordMgrWithDefaultRealm()
-  
-  authwiki.add_password( None, wiki, 
-      tawiki_username, tawiki_password )
+  return _get_wiki_resource(tadurl)
+
+
+def _get_wiki_resource(tadurl):
+# this authentication procedure is based on the HOWTO
+# at https://docs.python.org/2/howto/urllib2.html
+
+    authwiki = urllib2.HTTPPasswordMgrWithDefaultRealm()
+
+    authwiki.add_password(
+        None, WIKI,
+        tawiki_username, tawiki_password)
       
-  handler = urllib2.HTTPBasicAuthHandler(authwiki)    
-  opener = urllib2.build_opener(handler)
-  
-  return opener.open(tadurl).read()
+    handler = urllib2.HTTPBasicAuthHandler(authwiki)
+    opener = urllib2.build_opener(handler)
 
-  
+    return opener.open(tadurl).read()
+
+
+def get_log_page(log_file):
+    tadurl = WIKI + '/{}'.format(log_file)
+    return _get_wiki_resource(tadurl)
+
   
   
 def find_log_dates(html,site):

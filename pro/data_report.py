@@ -39,7 +39,7 @@ site_to_site_id = {
     'md'  : 2,
 }
 
-def data_report(reset=False, console_mirror=False):
+def data_report(reset=False, console_mirror=False, check_wiki_log=False):
     log_name = log.set_up_log(name='report_log.txt', console_mirror=console_mirror)
     logging.info('MAX_DATE: %s', MAX_DATE)
     is_db_new = False
@@ -88,14 +88,11 @@ def data_report(reset=False, console_mirror=False):
 
         if site_id == 2:
             continue
-        logging.info('Pre-%s nights (hours) missing from tadserv:\n%s',
-            MAX_DATE,
-            '\n'.join(['{}: {}'.format(night, site_hours[night]) for night in sorted(list(missing_nights))])
-        )
-
-
-
-
+        logging.info('Pre-%s nights (hours) missing from tadserv', MAX_DATE)
+        for night in sorted(list(missing_nights)):
+            logging.info('%s (%s hours):', night, site_hours[night])
+            if check_wiki_log:
+                logging.info('log content:\n%s', get_wiki_log_content(night))
 
 
 def init_db(dbfile):
@@ -185,8 +182,19 @@ def parse_line_logs(line, date):
     return existing_logs
 
 
+LOGTEXT = re.compile('(?<=start content -->\n).*(?=\n<!-- \nNewPP)', flags=re.S)
+def get_wiki_log_content(log_file):
+    log_html = tawiki.get_log_page(log_file)
+    text = LOGTEXT.findall(log_html)
+    if text:
+        return text[0]
+    else:
+        return '(could not parse {}'.format(log_file)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--reset', action='store_true')
+    parser.add_argument('-w', '--wiki', action='store_true')
     args = parser.parse_args()
-    data_report(reset=args.reset, console_mirror=True)
+    data_report(reset=args.reset, console_mirror=True, check_wiki_log=args.wiki)
