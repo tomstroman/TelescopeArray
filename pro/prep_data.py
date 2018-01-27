@@ -5,16 +5,14 @@
 import argparse
 import logging
 import os
-import re
 
 from db.database_wrapper import DatabaseWrapper
 
 from prep_fadc.raw_to_dst import _call_timecorr
-from utils import log, _camlist
+from prep_fadc.tama_run import TamaRun
+from utils import log
 
 FADC_DB = 'db/fadc_data.db'
-TAMA_EXE = os.path.join(os.getenv('TAHOME'), 'tama', 'bin', 'tama.run')
-EXPECTED_TAMA_STDERR = 2
 
 
 class PrologError(Exception):
@@ -44,53 +42,6 @@ class Part(object):
         return str(self.part11)
 
 
-class TamaRun(object):
-    def __init__(self, part, trigset, outdir):
-        self.part = part
-        self.trigset = trigset
-        self.outdir = outdir
-        self.cmd_template = '{tama_exe} -o {output_dst} -r {tama_code} {ctd_file} {cam_files} > {stdout} 2> {stderr}'
-        self.files = None
-
-    def build_cmd(self, ctd_prefix, daq_cams):
-        ctd_file = ctd_prefix + '-{}-{:07}.d.bz2'.format(self.part.site, self.trigset)
-        output_dst = os.path.join(
-            self.outdir,
-            '{}-{}-{:07}.dst.gz'.format(
-                os.path.basename(ctd_prefix),
-                self.part.site,
-                self.trigset,
-            ),
-        )
-        stdout, stderr, prolog = (output_dst.replace('.dst.gz', suffix) for suffix in ['.out', '.err', '.prolog'])
-        cam_file_template = ctd_prefix.replace('/ctd/', '/camera{0:02}/') + '-{0}-{{0:x}}-{1:07}.d.bz2'.format(self.part.site, self.trigset)
-        cam_files = ' '.join([cam_file_template.format(c) for c in _camlist(daq_cams)])
-
-        self.files = {
-            'dst' : output_dst,
-            'out' : stdout,
-            'err' : stderr,
-            'log' : prolog,
-        }
-
-        self.cmd = self.cmd_template.format(
-            tama_exe=TAMA_EXE,
-            output_dst=output_dst,
-            tama_code=self.part.tama_code,
-            ctd_file=ctd_file,
-            cam_files=cam_files,
-            stdout=stdout,
-            stderr=stderr
-        )
-
-        return self.cmd, self.files
-
-    def __repr__(self):
-        if self.files is not None:
-            return 'tama.run({})'.format(os.path.basename(self.files['dst']))
-        return 'tama.run({}, {:07})'.format(part, trigset)
-
-
 def process_subpart(part=None, trigset=None, outdir=os.curdir, console_mirror=False):
     log_name = log.set_up_log(name='process.log', console_mirror=console_mirror)
     logging.info('Logging to %s', log_name)
@@ -118,27 +69,7 @@ def process_subpart(part=None, trigset=None, outdir=os.curdir, console_mirror=Fa
     logging.info('Please wait; creating %s', files['dst'])
     os.system(cmd)
 
-    logging.info('Validating output')
-    if not all([os.path.exists(f) for f in files.values()]):
-        logging.error('Missing expected output from %s', tama_run)
-        raise MissingOutputError
-
-    stderr = open(files['err'], 'r').readlines()
-    logging.info('Lines of stderr: expected=%s, actual=%s', len(stderr), EXPECTED_TAMA_STDERR)
-
-    try:
-        prolog = open(files['log'], 'r').read()
-        prolog_data = dict([tuple(r.split()) for r in re.findall('[A-Z]+_[A-Z]+ \d+', prolog)[-4:]])
-        logging.info('Prolog report: read=%s, kept=%s, bytes=%s',
-            prolog_data['TAMA_READ'],
-            prolog_data['TAMA_KEPT'],
-            prolog_data['BYTES_OUT'],
-        )
-    except Exception as err:
-        logging.error('Encountered error reading prolog: %s', err)
-        raise PrologError
-
-    return prolog_data
+    return tama_run.prolog_data()
 
 
 def _get_db_info(part, trigset):
