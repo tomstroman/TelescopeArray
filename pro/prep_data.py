@@ -24,7 +24,7 @@ class MissingOutputError(Exception):
 
 
 class Part(object):
-    def __init__(self, part11):
+    def __init__(self, part11, ctd_prefix, daq_cams, daq_triggers):
         self.part11 = part11
         s11 = str(part11)
         self.year = s11[:4]
@@ -38,33 +38,19 @@ class Part(object):
         self.timecorr = '{}p{}_site{}_timecorr.txt'.format(self.yymmdd, self.part, self.site)
         self.tama_code = s11[2:10]
 
+        self.ctd_prefix = ctd_prefix
+        self.daq_cams = daq_cams
+        self.daq_triggers = daq_triggers
+
     def __repr__(self):
         return str(self.part11)
 
 
-def process_subpart(part=None, trigset=None, outdir=os.curdir, console_mirror=False):
-    log_name = log.set_up_log(name='process.log', console_mirror=console_mirror)
-    logging.info('Logging to %s', log_name)
-    if part is None or trigset is None:
-        logging.error('No part and/or trigset specified!')
-        raise ValueError
-
-    part = Part(part)
-    outdir = os.path.join(outdir, part.site, part.ymd)
-    if not os.path.exists(outdir):
-        os.makedirs(outdir)
-
+def process_subpart(part, trigset, outdir):
     tama_run = TamaRun(part, trigset, outdir)
 
-    logging.info('Processing part %s trigset %07d, output to %s', part, trigset, outdir)
-    ctd_prefix, daq_cams = _get_db_info(part, trigset)
 
-    timecorr_file = os.path.join(outdir, part.timecorr)
-    if not os.path.exists(timecorr_file):
-        logging.info('Creating %s', timecorr_file)
-        _call_timecorr(part.site, outdir, ctd_prefix)
-
-    cmd, files = tama_run.build_cmd(ctd_prefix, daq_cams)
+    cmd, files = tama_run.build_cmd(part.ctd_prefix, part.daq_cams)
     logging.debug('TAMA command: %s', cmd)
     logging.info('Please wait; creating %s', files['dst'])
     os.system(cmd)
@@ -72,7 +58,39 @@ def process_subpart(part=None, trigset=None, outdir=os.curdir, console_mirror=Fa
     return tama_run.prolog_data()
 
 
-def _get_db_info(part, trigset):
+def process_part(part=None, outdir=os.curdir, console_mirror=False):
+    log_name = log.set_up_log(name='process.log', console_mirror=console_mirror)
+    logging.info('Logging to %s', log_name)
+
+    if part is None:
+        logging.error('No part specified!')
+        raise ValueError
+
+    ctd_prefix, daq_triggers, daq_cams = _get_db_info(part)
+    part = Part(part, ctd_prefix, daq_cams, daq_triggers)
+
+    outdir = os.path.join(outdir, part.site, part.ymd)
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+
+    logging.info('Processing part %s output to %s', part, outdir)
+
+    timecorr_file = os.path.join(outdir, part.timecorr)
+    if not os.path.exists(timecorr_file):
+        logging.info('Creating %s', timecorr_file)
+        _call_timecorr(part.site, outdir, ctd_prefix)
+
+    timecorr_lines = len(open(timecorr_file, 'r').readlines())
+    logging.info('Trigger counts: daq=%s, ctd=%s', daq_triggers, timecorr_lines)
+    for trigset in range(0, timecorr_lines, 256):
+        logging.info('Processing trigset %07d', trigset)
+        try:
+            prolog_data = process_subpart(part, trigset, outdir)
+        except:
+            pass
+
+
+def _get_db_info(part):
     db = DatabaseWrapper(FADC_DB)
     sql = 'SELECT f.ctdprefix, p.daqtrig, p.daqcams FROM Filesets AS f JOIN Parts AS p ON f.part11=p.part11 WHERE f.part11={}'.format(part)
     rows = db.retrieve(sql)
@@ -82,18 +100,13 @@ def _get_db_info(part, trigset):
 
     ctd_prefix, daq_triggers, daq_cams = rows[0]
     logging.info('ctd_prefix: %s', ctd_prefix)
-    if not 0 <= trigset < daq_triggers:
-        logging.error('Requesting triggers from %d but DAQ reports %d', trigset, daq_triggers)
-        raise ValueError("TriggerOutOfBounds")
-    return ctd_prefix, daq_cams
+    return ctd_prefix, daq_triggers, daq_cams
 
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--part', type=int, help="11-digit part code (yyyymmddpps)")
-    parser.add_argument('-t', '--trigset', type=int, help="trigger set (multiple of 256)")
     parser.add_argument('-o', '--outdir', help="location for output")
     args = parser.parse_args()
-    assert not args.trigset % 256, 'trigset must be a multiple of 256!'
-    process_subpart(args.part, args.trigset, args.outdir, console_mirror=True)
+    process_part(args.part, args.outdir, console_mirror=True)
