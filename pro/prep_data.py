@@ -46,19 +46,22 @@ class Part(object):
         return str(self.part11)
 
 
-def process_subpart(part, trigset, outdir):
+def process_subpart(part, trigset, outdir, skip_run=False):
     tama_run = TamaRun(part, trigset, outdir)
 
 
     cmd, files = tama_run.build_cmd(part.ctd_prefix, part.daq_cams)
     logging.debug('TAMA command: %s', cmd)
-    logging.info('Please wait; creating %s', files['dst'])
-    os.system(cmd)
+    if not skip_run:
+        logging.info('Please wait; creating %s', files['dst'])
+        os.system(cmd)
+    else:
+        logging.warn('Skipping execution.')
 
     return tama_run.prolog_data()
 
 
-def process_part(part=None, outdir=os.curdir, console_mirror=False):
+def process_part(part=None, outdir=os.curdir, skip_run=False, console_mirror=False):
     log_name = log.set_up_log(name='process.log', console_mirror=console_mirror)
     logging.info('Logging to %s', log_name)
 
@@ -85,7 +88,7 @@ def process_part(part=None, outdir=os.curdir, console_mirror=False):
     for trigset in range(0, timecorr_lines, 256):
         logging.info('Processing trigset %07d', trigset)
         try:
-            prolog_data = process_subpart(part, trigset, outdir)
+            prolog_data = process_subpart(part, trigset, outdir, skip_run)
         except:
             pass
 
@@ -108,5 +111,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--part', type=int, help="11-digit part code (yyyymmddpps)")
     parser.add_argument('-o', '--outdir', help="location for output")
+    parser.add_argument('-s', '--skip', action='store_true', help='skip the main TAMA generation and re-check output')
     args = parser.parse_args()
-    process_part(args.part, args.outdir, console_mirror=True)
+    process_part(args.part, args.outdir, args.skip, console_mirror=True)
