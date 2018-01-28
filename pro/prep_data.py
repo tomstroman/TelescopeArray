@@ -51,7 +51,7 @@ def process_subpart(part, trigset, outdir, skip_run=False):
 
 
     cmd, files = tama_run.build_cmd(part.ctd_prefix, part.daq_cams)
-    logging.debug('TAMA command: %s', cmd)
+    #logging.debug('TAMA command: %s', cmd)
     if not skip_run:
         logging.info('Please wait; creating %s', files['dst'])
         os.system(cmd)
@@ -63,8 +63,6 @@ def process_subpart(part, trigset, outdir, skip_run=False):
 
 def process_part(part=None, outdir=os.curdir, skip_run=False, console_mirror=False):
     log_name = log.set_up_log(name='process.log', console_mirror=console_mirror)
-    logging.info('Logging to %s', log_name)
-
     if part is None:
         logging.error('No part specified!')
         raise ValueError
@@ -85,13 +83,29 @@ def process_part(part=None, outdir=os.curdir, skip_run=False, console_mirror=Fal
 
     timecorr_lines = len(open(timecorr_file, 'r').readlines())
     logging.info('Trigger counts: daq=%s, ctd=%s', daq_triggers, timecorr_lines)
+
+    event_count_file = os.path.basename(ctd_prefix).replace('DAQ-', 'eventcounts-') + '.txt'
+    event_count_file = os.path.join(outdir, event_count_file)
+    event_count_buffer = ''
     for trigset in range(0, timecorr_lines, 256):
-        logging.info('Processing trigset %07d', trigset)
+        expected = min([256, timecorr_lines - trigset])
+        logging.info('Processing trigset %07d (expecting %d triggers)', trigset, expected)
         try:
             prolog_data = process_subpart(part, trigset, outdir, skip_run)
-        except:
-            pass
+            is_error = 1 if int(prolog_data['TAMA_KEPT']) != expected else 0
+            event_count_buffer += '{:07} {} {} {} {}\n'.format(
+                trigset,
+                prolog_data['TAMA_KEPT'],
+                prolog_data['DURATION'],
+                prolog_data['BYTES_OUT'],
+                is_error,
+            )
+        except Exception as err:
+            logging.error(' !!! Failed to process %07d !!!: %s', trigset, err)
+            event_count_buffer += '{:07} 0 0 0 1\n'.format(trigset)
 
+    with open(event_count_file, 'w') as ecfile:
+        ecfile.write(event_count_buffer)
 
 def _get_db_info(part):
     db = DatabaseWrapper(FADC_DB)

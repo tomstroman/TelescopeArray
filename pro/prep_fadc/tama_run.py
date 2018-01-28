@@ -1,10 +1,14 @@
 import logging
 import os
 import re
-
+from datetime import datetime
 
 TAMA_EXE = os.path.join(os.getenv('TAHOME'), 'tama', 'bin', 'tama.run')
 EXPECTED_TAMA_STDERR = 2
+
+
+# match a string like "7/28/2017  UT 05:59:55.087354105" followed by the processing time (indicating success)
+TIMESTAMP = re.compile('(\d+)\/(\d+)\/(\d{4}) +UT (\d+):(\d{2}):(\d{2}\.\d+).*sec')
 
 
 def _camlist(daq_cams):
@@ -14,6 +18,11 @@ def _camlist(daq_cams):
     a camera was active for a given DAQ part.
     """
     return [i for i in range(12) if (daq_cams >> i) % 2]
+
+
+def _time(timestamp): # works with TIMESTAMP matches
+    hour, minute, second = [float(t) for t in timestamp[-3:]]
+    return hour*3600 + minute*60 + second
 
 
 class TamaRun(object):
@@ -63,11 +72,13 @@ class TamaRun(object):
             logging.error('Missing expected output from %s', self)
             raise MissingOutputError
 
-        stderr = open(self.files['err'], 'r').readlines()
-        logging.info('Lines of stderr: expected=%s, actual=%s', len(stderr), EXPECTED_TAMA_STDERR)
+        with open(self.files['err'], 'r') as err_file:
+            stderr = err_file.readlines()
+        logging.info('Lines of stderr: expected=%s, actual=%s', EXPECTED_TAMA_STDERR, len(stderr))
 
         try:
-            prolog = open(self.files['log'], 'r').read()
+            with open(self.files['log'], 'r') as log_file:
+                prolog = log_file.read()
             prolog_data = dict([tuple(r.split()) for r in re.findall('[A-Z]+_[A-Z]+ \d+', prolog)[-4:]])
             logging.info('Prolog report: read=%s, kept=%s, bytes=%s',
                 prolog_data['TAMA_READ'],
@@ -77,6 +88,13 @@ class TamaRun(object):
         except Exception as err:
             logging.error('Encountered error reading prolog: %s', err)
             raise PrologError
+
+        with open(self.files['out'], 'r') as out_file:
+            stdout = out_file.read()
+        times = TIMESTAMP.findall(stdout)
+
+        duration = _time(times[-1]) - _time(times[0])
+        prolog_data['DURATION'] = duration
 
         return prolog_data
 
