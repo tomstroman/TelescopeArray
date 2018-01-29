@@ -11,6 +11,14 @@ EXPECTED_TAMA_STDERR = 2
 TIMESTAMP = re.compile('(\d+)\/(\d+)\/(\d{4}) +UT (\d+):(\d{2}):(\d{2}\.\d+).*sec')
 
 
+class PrologError(Exception):
+    pass
+
+
+class MissingOutputError(Exception):
+    pass
+
+
 def _camlist(daq_cams):
     """
     Get the list of active camera IDs, given daqcams.

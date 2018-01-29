@@ -15,13 +15,6 @@ from utils import log
 FADC_DB = 'db/fadc_data.db'
 
 
-class PrologError(Exception):
-    pass
-
-
-class MissingOutputError(Exception):
-    pass
-
 
 class Part(object):
     def __init__(self, part11, ctd_prefix, daq_cams, daq_triggers):
@@ -61,8 +54,7 @@ def process_subpart(part, trigset, outdir, skip_run=False):
     return tama_run.prolog_data()
 
 
-def process_part(part=None, outdir=os.curdir, skip_run=False, console_mirror=False):
-    log_name = log.set_up_log(name='process.log', console_mirror=console_mirror)
+def process_part(part=None, outdir=os.curdir, skip_run=False):
     if part is None:
         logging.error('No part specified!')
         raise ValueError
@@ -107,6 +99,20 @@ def process_part(part=None, outdir=os.curdir, skip_run=False, console_mirror=Fal
     with open(event_count_file, 'w') as ecfile:
         ecfile.write(event_count_buffer)
 
+
+def process_night(night=None, site=None, outdir=os.curdir, skip_run=False):
+    if night is None or site is None:
+        logging.error('Missing night and/or site argument')
+        raise ValueError
+    logging.info('Processing site %s for %s', site, night)
+    db = DatabaseWrapper(FADC_DB)
+    sql = 'SELECT part11 FROM Parts WHERE date={} AND site={} AND daqsigma>=6.0'.format(night, site)
+    parts = [row[0] for row in db.retrieve(sql)]
+    logging.info('Number of parts found: %s (codes: %s)', len(parts), ', '.join([str(part)[8:10] for part in parts]))
+    for part in parts:
+        process_part(part, outdir, skip_run)
+
+
 def _get_db_info(part):
     db = DatabaseWrapper(FADC_DB)
     sql = 'SELECT f.ctdprefix, p.daqtrig, p.daqcams FROM Filesets AS f JOIN Parts AS p ON f.part11=p.part11 WHERE f.part11={}'.format(part)
@@ -124,7 +130,16 @@ def _get_db_info(part):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--part', type=int, help="11-digit part code (yyyymmddpps)")
+    parser.add_argument('-n', '--night', type=int, help="8-digit night (yyyymmdd)")
+    parser.add_argument('-s', '--site', type=int, choices=[0,1], help="site: 0 (BRM) or 1 (LR)")
     parser.add_argument('-o', '--outdir', help="location for output")
-    parser.add_argument('-s', '--skip', action='store_true', help='skip the main TAMA generation and re-check output')
+    parser.add_argument('--skip', action='store_true', help='skip the main TAMA generation and re-check output')
+    parser.add_argument('-l', '--log', default='process.log', help='name of log file')
     args = parser.parse_args()
-    process_part(args.part, args.outdir, args.skip, console_mirror=True)
+    log_name = log.set_up_log(name=args.log, console_mirror=True)
+    if args.part is not None:
+        process_part(args.part, args.outdir, args.skip)
+    elif args.night is not None and args.site is not None:
+        process_night(args.night, args.site, args.outdir, args.skip)
+    else:
+        logging.error('Missing required arguments')
