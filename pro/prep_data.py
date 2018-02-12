@@ -110,7 +110,10 @@ def process_night(night=None, site=None, outdir=os.curdir, skip_run=False):
     parts = [row[0] for row in db.retrieve(sql)]
     logging.info('Number of parts found: %s (codes: %s)', len(parts), ', '.join([str(part)[8:10] for part in parts]))
     for part in parts:
-        process_part(part, outdir, skip_run)
+        try:
+            process_part(part, outdir, skip_run)
+        except Exception as err:
+            logging.error('Error encountered on part %s. Message: %s', part, err)
 
 
 def _get_db_info(part):
@@ -118,7 +121,7 @@ def _get_db_info(part):
     sql = 'SELECT f.ctdprefix, p.daqtrig, p.daqcams FROM Filesets AS f JOIN Parts AS p ON f.part11=p.part11 WHERE f.part11={}'.format(part)
     rows = db.retrieve(sql)
     if len(rows) != 1:
-        logging.error('No unique Fileset found for part11=%s', part)
+        logging.error('No unique Fileset found for part11=%s. Found: %d', part, len(rows))
         raise ValueError("FilesetNotFound")
 
     ctd_prefix, daq_triggers, daq_cams = rows[0]
