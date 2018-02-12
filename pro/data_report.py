@@ -39,6 +39,55 @@ site_to_site_id = {
     'md'  : 2,
 }
 
+
+
+# status system: characterize progress of a given night or part numerically, with
+# higher numbers representing further processing. Negative numbers are used to
+# indicate parts that are known to have problems and *cannot* be processed to
+# the corresponding positive number. Nights or parts with negative statuses in
+# whatever database field ends up holding them will be ignored.
+class Status(object):
+    def __init__(self):
+        pass
+
+night_statuses = Status()
+night_statuses.NO_DAQ = 0 # did not attempt to take data, wiki does not indicate log file should exist
+
+night_statuses.LOG_EXISTS = 1 # log file found
+night_statuses.LOG_MISSING = -1 # log file missing from disk and cannot be corrected
+
+night_statuses.SIXSIGMA = 2 # log file includes data parts at 6-sigma threshold or higher
+night_statuses.NO_SIXSIGMA = -2 # log file shows no data parts of scientific merit
+
+night_statuses.DAQ_EXISTS = 3 # any data for this night exists (may be incomplete)
+night_statuses.DAQ_MISSING = -3 # no data can be found for this night
+
+night_statuses.DAQ_COMPLETE = 4 # data exists for all parts listed in log (includes parts terminated early)
+night_statuses.DAQ_INCOMPLETE = -4 # data missing for at least some parts
+
+night_statuses.FDPED_EXISTS = 5 # FDPED data summary has been generated and is in the expected location
+night_statuses.FDPED_FAILURE = -5 # FDPED generation fails and cannot be corrected
+
+part_statuses = Status()
+
+part_statuses.LOG_EXISTS = 0 # A log file claims this part was requested during operation
+
+part_statuses.DAQ_EXISTS = 1
+part_statuses.DAQ_MISSING = -1 # no data can be found for this part
+
+part_statuses.TIMECORR_EXISTS = 2 # timecorr file is found in the expected location
+part_statuses.TIMECORR_FAILURE = -2 # timecorr generation fails and cannot be corrected
+
+part_statuses.DST_EXISTS = 3 # DST files are found in the expected location
+part_statuses.DST_FAILURE = -3 # DST generation fails and cannot be corrected
+
+part_statuses.FDPED_EXISTS = 4
+part_statuses.FDPED_FAILURE = -4
+
+part_statuses.CALIBRATION_COMPLETE = 5 # FDPlane processing mentions no "missing" pedestal, gain, or reflectance errors
+part_statuses.CALIBRATION_INCOMPLETE = -5 # calibration permanently unavailable for some or all of data part
+
+
 def data_report(reset=False, console_mirror=False, check_wiki_log=False):
     log_name = log.set_up_log(name='report_log.txt', console_mirror=console_mirror)
     logging.info('MAX_DATE: %s', MAX_DATE)
