@@ -29,8 +29,8 @@ from db.database_wrapper import DatabaseWrapper
 from utils import log, tawiki
 
 
-MAX_DATE = 20161111
-db_wiki = 'db/wiki.db'
+MAX_DATE = 20171201
+db_wiki = 'db/tafd_status.db'
 db_fadc = 'db/fadc_data.db'
 
 site_to_site_id = {
@@ -51,7 +51,7 @@ class Status(object):
         pass
 
 night_statuses = Status()
-night_statuses.NO_DAQ = 0 # did not attempt to take data, wiki does not indicate log file should exist
+night_statuses.WIKI_EXISTS = 0 # Wiki indicates detector may have run
 
 night_statuses.LOG_EXISTS = 1 # log file found
 night_statuses.LOG_MISSING = -1 # log file missing from disk and cannot be corrected
@@ -102,6 +102,56 @@ def data_report(reset=False, console_mirror=False, check_wiki_log=False):
     if is_db_new:
         update_from_wiki(db)
 
+    sql = 'SELECT count() FROM NightStatus WHERE status={} AND site<2'.format(night_statuses.WIKI_EXISTS)
+    num_wiki = db.retrieve(sql)[0][0]
+    logging.info('FADC FD runs in state WIKI_EXISTS: %s', num_wiki)
+
+    db.attach(db_fadc, 'FDDB')
+    sql = 'SELECT n.date, n.site FROM NightStatus AS n JOIN FDDB.Runnights AS r ON n.date=r.date AND n.site=r.site WHERE n.status={}'.format(night_statuses.WIKI_EXISTS)
+    rows = db.retrieve(sql)
+    if rows:
+        logging.info('Log files found for %s FD runs; promoting status', len(rows))
+        db.update_rows('UPDATE NightStatus SET status={} WHERE date=? AND site=?'.format(night_statuses.LOG_EXISTS), tuple(rows))
+
+    sql = 'SELECT count() FROM NightStatus WHERE status={} AND site<2'.format(night_statuses.LOG_EXISTS)
+    num_log = db.retrieve(sql)[0][0]
+    logging.info('FADC FD runs in state LOG_EXISTS: %s', num_log)
+
+    sql = 'SELECT n.date, n.site FROM FDDB.Parts AS p JOIN NightStatus AS n ON n.date=p.date AND n.site=p.site WHERE p.daqsigma=6.0 AND n.status={}'.format(night_statuses.LOG_EXISTS)
+    rows = db.retrieve(sql)
+    unique_rows = set(rows)
+    if unique_rows:
+        logging.info('Six-sigma parts in LOG_EXISTS: %s in %s runs; promoting status', len(rows), len(unique_rows))
+        db.update_rows('UPDATE NightStatus SET status={} WHERE date=? AND site=?'.format(night_statuses.SIXSIGMA), tuple(unique_rows))
+
+    sql = 'SELECT count() FROM NightStatus WHERE status={} AND site<2'.format(night_statuses.SIXSIGMA)
+    num_six = db.retrieve(sql)[0][0]
+    logging.info('FADC FD runs in state SIXSIGMA: %s', num_six)
+
+    sql = 'SELECT n.date, n.site FROM FDDB.Filesets AS f JOIN FDDB.Parts AS p ON p.part11=f.part11 JOIN NightStatus AS n ON n.date=p.date AND n.site=p.site WHERE p.daqsigma=6.0 AND n.status={}'.format(night_statuses.SIXSIGMA)
+    rows = db.retrieve(sql)
+    unique_rows = set(rows)
+    if unique_rows:
+        logging.info('Filesets in SIXSIGMA: %s in %s runs; promoting status', len(rows), len(unique_rows))
+        db.update_rows('UPDATE NightStatus SET status={} WHERE date=? AND site=?'.format(night_statuses.DAQ_EXISTS), tuple(unique_rows))
+
+    sql = 'SELECT date, site FROM NightStatus WHERE status={} AND site<2'.format(night_statuses.DAQ_EXISTS)
+    any_daq_exists = db.retrieve(sql)
+    logging.info('FADC FD runs in state DAQ_EXISTS: %s', len(any_daq_exists))
+
+    sql = 'SELECT n.date, n.site FROM FDDB.Parts AS p LEFT OUTER JOIN FDDB.Filesets AS f ON p.part11=f.part11 JOIN NightStatus AS n ON p.date=n.date AND p.site=n.site WHERE n.status={} AND p.daqsigma=6.0 AND f.ctdprefix IS NULL'.format(night_statuses.DAQ_EXISTS)
+    rows = db.retrieve(sql)
+    complete_rows = set(any_daq_exists) - set(rows)
+    if complete_rows:
+        logging.info('DAQ found for all parts on %s DAQ_EXISTS runs; promoting status', len(complete_rows))
+        db.update_rows('UPDATE NightStatus SET status={} WHERE date=? AND site=?'.format(night_statuses.DAQ_COMPLETE), tuple(complete_rows))
+
+    sql = 'SELECT date, site FROM NightStatus WHERE status={} AND site<2'.format(night_statuses.DAQ_COMPLETE)
+    all_daq_exists = db.retrieve(sql)
+    logging.info('FADC FD runs in state DAQ_COMPLETE: %s', len(all_daq_exists))
+
+
+def extra_code(db):
     sql = 'SELECT count(), sum(darkhours) FROM Dates'
     nights, dark_hours = db.retrieve(sql)[0]
     logging.info('Database contains %s nights with %s dark hours', nights, dark_hours)
@@ -109,9 +159,8 @@ def data_report(reset=False, console_mirror=False, check_wiki_log=False):
     run_nights, run_darkhours = db.retrieve(sql)[0]
     logging.info('%s nights with > 3.0 dark hours for %s hours', run_nights, run_darkhours)
 
-    db.attach(db_fadc, 'FDDB')
-    for site_id in range(3):
-        sql = 'SELECT count(), sum(d.darkhours) FROM Dates AS d JOIN Wikilogs AS w ON d.date=w.date WHERE w.site={site_id} AND d.darkhours > 3.0'.format(
+    for site_id in range(2):
+        sql = 'SELECT count(), sum(d.darkhours) FROM Dates AS d JOIN NightStatus AS w ON d.date=w.date WHERE w.site={site_id} AND d.darkhours > 3.0'.format(
             site_id=site_id,
         )
         site_night_count, site_darkhours = db.retrieve(sql)[0]
@@ -120,7 +169,7 @@ def data_report(reset=False, console_mirror=False, check_wiki_log=False):
             site_id, site_night_count, site_darkhours, float(site_darkhours)/float(run_darkhours)
         )
 
-        sql = 'SELECT w.file, d.darkhours FROM Wikilogs AS w JOIN Dates AS d ON d.date=w.date WHERE site={site_id} AND d.date<{max_date}'.format(
+        sql = 'SELECT w.wikilog, d.darkhours FROM NightStatus AS w JOIN Dates AS d ON d.date=w.date WHERE site={site_id} AND d.date<{max_date}'.format(
             site_id=site_id,
             max_date=MAX_DATE,
         )
@@ -128,7 +177,7 @@ def data_report(reset=False, console_mirror=False, check_wiki_log=False):
         site_hours = {night: hours for night, hours in site_nights_hours}
         site_nights = set([row[0] for row in site_nights_hours])
 
-        sql = 'SELECT w.file FROM FDDB.Runnights AS r JOIN Wikilogs AS w ON r.date=w.date AND r.site=w.site WHERE w.site={site_id}'.format(
+        sql = 'SELECT w.wikilog FROM FDDB.Runnights AS r JOIN NightStatus AS w ON r.date=w.date AND r.site=w.site WHERE w.site={site_id}'.format(
             site_id=site_id,
         )
         site_fdnights = set([row[0] for row in db.retrieve(sql)])
@@ -178,8 +227,8 @@ def update_from_wiki(db):
         for date, sites in site_logs.items():
             for site in sites:
                 try:
-                    db.insert_row('INSERT INTO Wikilogs VALUES(?, ?, ?)', 
-                        (date, site_to_site_id[site[1]], site[0].lower())
+                    db.insert_row('INSERT INTO NightStatus VALUES(?, ?, ?, ?)',
+                        (date, site_to_site_id[site[1]], site[0].lower(), night_statuses.WIKI_EXISTS)
                     )
                 except Exception as err:
                     logging.error('Exception: %s executing SQL for %s, %s', err, date, sites)

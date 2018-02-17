@@ -282,8 +282,8 @@ def find_filesets():
     db_filesets = db.retrieve('SELECT part11 FROM Filesets')
     print 'Filesets already in database:', len(db_filesets)
 
-    db_parts = db.retrieve('SELECT p.part11, r.download FROM Parts AS p JOIN Runnights AS r ON p.date=r.date AND p.site=r.site WHERE p.daqsigma=6.0 ORDER BY p.part11')
-    for part11, download in db_parts:
+    db_parts = db.retrieve('SELECT p.part11, p.daqsigma, p.daqtrig, r.download FROM Parts AS p JOIN Runnights AS r ON p.date=r.date AND p.site=r.site WHERE p.daqsigma=6.0 ORDER BY p.part11')
+    for part11, daqsigma, daqtrig, download in db_parts:
         if (part11,) in db_filesets:
             continue
 
@@ -291,7 +291,7 @@ def find_filesets():
         daqname = 'DAQ-*{}-{}-???????.d.bz2'.format(str(part11)[4:10], part11 % 10)
         ctd_daqs = glob(os.path.join(ctdpath, daqname))
         if not ctd_daqs:
-            print 'No files found for', part11
+            print 'No files found for {} ({}, {}) {}'.format(part11, daqsigma, daqtrig, download)
             continue
         ctdprefix = ctd_daqs[0][:-16]
         fileset = (part11, ctdprefix)
