@@ -108,7 +108,7 @@ def _call_timecorr(site, output_dir, daq_pref):
     out, err = _command(cmd)
     print 'command finished'
     assert not out
-    assert not err
+    assert not err, err
 
 def make_timecorr(part_code, daq_pref):
     # build the file in temporary output

@@ -39,6 +39,15 @@ site_to_site_id = {
     'md'  : 2,
 }
 
+YMDPS = re.compile('(\d{4})(\d{2})(\d{2})(\d{2})(\d)')
+TIMECORRS = {
+    '0': '/tama_{4}/black-rock/{0}{1}{2}/y{0}m{1}d{2}p{3}_site{4}_timecorr.txt',
+    '1': '/tama_{4}/long-ridge/{0}{1}{2}/y{0}m{1}d{2}p{3}_site{4}_timecorr.txt',
+}
+DSTS = {
+    '0': '/tama_{4}/black-rock/{0}{1}{2}/{5}-{4}-0000000.dst.gz',
+    '1': '/tama_{4}/long-ridge/{0}{1}{2}/{5}-{4}-0000000.dst.gz',
+}
 
 
 # status system: characterize progress of a given night or part numerically, with
@@ -149,6 +158,71 @@ def data_report(reset=False, console_mirror=False, check_wiki_log=False):
     sql = 'SELECT date, site FROM NightStatus WHERE status={} AND site<2'.format(night_statuses.DAQ_COMPLETE)
     all_daq_exists = db.retrieve(sql)
     logging.info('FADC FD runs in state DAQ_COMPLETE: %s', len(all_daq_exists))
+
+    sql = 'SELECT f.part11, f.date, f.part, f.site from FDDB.Parts AS f WHERE f.daqsigma=6.0 AND f.part11 NOT IN (SELECT part11 FROM PartStatus)'
+    new_parts = db.retrieve(sql)
+    if new_parts:
+        logging.info('Found %s new 6-sigma part(s); adding to status DB with status LOG_EXISTS', len(new_parts))
+        for part11, date, part, site in new_parts:
+            try:
+                db.insert_row('INSERT INTO PartStatus VALUES(?, ?, ?, ?, ?)', (part11, date, part, site, part_statuses.LOG_EXISTS))
+            except Exception as err:
+                logging.error('Error adding %s: %s', part11, err)
+
+    sql = 'SELECT part11 FROM PartStatus WHERE status={}'.format(part_statuses.LOG_EXISTS)
+    logged_parts = db.retrieve(sql)
+    logging.info('Six-sigma parts in state LOG_EXISTS: %s', len(logged_parts))
+
+    sql = 'SELECT part11 FROM FDDB.Filesets WHERE part11 IN ({})'.format(sql)
+    rows = db.retrieve(sql)
+    if rows:
+        logging.info('DAQ found for %s LOG_EXISTS part(s); promoting status', len(rows))
+        db.update_rows('UPDATE PartStatus SET status={} WHERE part11=?'.format(part_statuses.DAQ_EXISTS), tuple(rows))
+
+    sql = 'SELECT part11 FROM PartStatus WHERE status={}'.format(part_statuses.DAQ_EXISTS)
+    daq_parts = db.retrieve(sql)
+    logging.info('Six-sigma parts in state DAQ_EXISTS: %s', len(daq_parts))
+
+    timecorr_found = set()
+    for part11, in daq_parts:
+        timecorr = _timecorr_file(part11)
+        logging.info('Searching for %s', timecorr)
+        if os.path.exists(timecorr):
+            timecorr_found.add((part11,))
+    if timecorr_found:
+        logging.info('Found timecorr for %s DAQ_EXISTS part(s); promoting status', len(timecorr_found))
+        db.update_rows('UPDATE PartStatus SET status={} WHERE part11=?'.format(part_statuses.TIMECORR_EXISTS), tuple(timecorr_found))
+
+    sql = 'SELECT f.part11, f.ctdprefix FROM FDDB.Filesets AS f WHERE f.part11 IN (SELECT part11 FROM PartStatus WHERE status={}) ORDER BY f.part11'.format(part_statuses.TIMECORR_EXISTS)
+    tc_parts = db.retrieve(sql)
+    logging.info('Six-sigma parts in state TIMECORR_EXISTS: %s', len(tc_parts))
+
+    dst0_found = set()
+    for part11, ctd_prefix in tc_parts:
+        dst0 = _dst0_file(part11, ctd_prefix)
+        logging.info('Searching for %s', dst0)
+        if os.path.exists(dst0):
+            dst0_found.add((part11,))
+    if dst0_found:
+        logging.info('Found dst0 for %s TIMECORR_EXISTS part(s); promoting status', len(dst0_found))
+        db.update_rows('UPDATE PartStatus SET status={} WHERE part11=?'.format(part_statuses.DST_EXISTS), tuple(dst0_found))
+
+    sql = 'SELECT part11 FROM PartStatus WHERE status={}'.format(part_statuses.DST_EXISTS)
+    dst_parts = db.retrieve(sql)
+    logging.info('Six-sigma parts in state DST_EXISTS: %s', len(dst_parts))
+
+
+
+
+def _timecorr_file(part11):
+    y, m, d, p, s = YMDPS.findall(str(part11))[0]
+    return TIMECORRS[s].format(y, m, d, p, s)
+
+
+def _dst0_file(part11, ctd_prefix):
+    y, m, d, p, s = YMDPS.findall(str(part11))[0]
+    daq_code = os.path.basename(ctd_prefix)
+    return DSTS[s].format(y, m, d, p, s, daq_code)
 
 
 def extra_code(db):
