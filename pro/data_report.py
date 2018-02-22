@@ -48,7 +48,10 @@ DSTS = {
     '0': '/tama_{4}/black-rock/{0}{1}{2}/{5}-{4}-0000000.dst.gz',
     '1': '/tama_{4}/long-ridge/{0}{1}{2}/{5}-{4}-0000000.dst.gz',
 }
-
+FDPEDS = {
+    '0': '/scratch1/fdpedv/black-rock/{0}{1}{2}/y{0}m{1}d{2}p{3}.ped.dst.gz',
+    '1': '/scratch1/fdpedv/long-ridge/{0}{1}{2}/y{0}m{1}d{2}p{3}.ped.dst.gz',
+}
 
 # status system: characterize progress of a given night or part numerically, with
 # higher numbers representing further processing. Negative numbers are used to
@@ -207,11 +210,23 @@ def data_report(reset=False, console_mirror=False, check_wiki_log=False):
         logging.info('Found dst0 for %s TIMECORR_EXISTS part(s); promoting status', len(dst0_found))
         db.update_rows('UPDATE PartStatus SET status={} WHERE part11=?'.format(part_statuses.DST_EXISTS), tuple(dst0_found))
 
-    sql = 'SELECT part11 FROM PartStatus WHERE status={}'.format(part_statuses.DST_EXISTS)
+    sql = 'SELECT part11 FROM PartStatus WHERE status={} ORDER BY part11'.format(part_statuses.DST_EXISTS)
     dst_parts = db.retrieve(sql)
     logging.info('Six-sigma parts in state DST_EXISTS: %s', len(dst_parts))
 
+    fdped_found = set()
+    for part11, in dst_parts:
+        fdped = _fdped_part_file(part11)
+        logging.info('Searching for %s', fdped)
+        if os.path.exists(fdped):
+            fdped_found.add((part11,))
+    if fdped_found:
+        logging.info('Found fdped for %s DST_EXISTS part(s); promoting status', len(fdped_found))
+        db.update_rows('UPDATE PartStatus SET status={} WHERE part11=?'.format(part_statuses.FDPED_EXISTS), tuple(fdped_found))
 
+    sql = 'SELECT part11 FROM PartStatus WHERE status={}'.format(part_statuses.FDPED_EXISTS)
+    fdped_parts = db.retrieve(sql)
+    logging.info('Six-sigma parts in state FDPED_EXISTS: %s', len(fdped_parts))
 
 
 def _timecorr_file(part11):
@@ -223,6 +238,11 @@ def _dst0_file(part11, ctd_prefix):
     y, m, d, p, s = YMDPS.findall(str(part11))[0]
     daq_code = os.path.basename(ctd_prefix)
     return DSTS[s].format(y, m, d, p, s, daq_code)
+
+
+def _fdped_part_file(part11):
+    y, m, d, p, s = YMDPS.findall(str(part11))[0]
+    return FDPEDS[s].format(y, m, d, p, s)
 
 
 def extra_code(db):
