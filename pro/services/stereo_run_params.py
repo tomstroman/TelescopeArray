@@ -3,7 +3,7 @@ import os
 
 class StereoRunParams(object):
     def __init__(self, stereo_run, is_mc=True, fdplane_config='joint_cal1.4', geometry=None,
-            calibration=None, model=None, species=None, name=None):
+            calibration=None, model=None, species=None, species_name=None, name=None, dtime=None):
         self.db = stereo_run.db
         self.stereo_run = stereo_run
 
@@ -25,13 +25,13 @@ class StereoRunParams(object):
 
         self.is_mc = is_mc
         if self.is_mc:
-            self.species = species or self._pick_species()
+            self.species = species or self._pick_species(species_name)
+            self.dtime = float(dtime)
         else:
             self.species = None
+            self.dtime = None
 
         self.name = name or self._generate_name()
-
-        self.dtime = 180.0 # TODO: get this from input
 
     def __repr__(self):
         return 'StereoRunParams {}: fdplane={}, model={}, MC species={}, geometry={}'.format(
@@ -63,13 +63,14 @@ class StereoRunParams(object):
         # temporary: just pick index 1 (should be qgsjetii-03)
         return sorted_models[1][0]
 
-    def _pick_species(self):
+    def _pick_species(self, species_name=None):
         species = self.db.retrieve('SELECT corsika_id, name FROM Species')
         sorted_species = sorted(species, key=lambda x: x[0])
         for corsika_id, name in sorted_species:
-            logging.info('found species: %s ("%s")', corsika_id, name)
-        # temporary: just pick index 0 (should be proton)
-        return species[0][0]
+            if name == species_name:
+                logging.info('found species: %s ("%s")', corsika_id, name)
+                return corsika_id
+        raise Exception('Species not found')
 
     def _generate_name(self):
         if not self.is_mc:

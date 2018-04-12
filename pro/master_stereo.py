@@ -9,6 +9,7 @@ def make_stereo_happen(
         console_mirror=False,
         date_list=None,
         name=None,
+        source=None,
         begin=None,
         end=None,
     ):
@@ -18,7 +19,7 @@ def make_stereo_happen(
 
     logging.info("stereo happening now")
 
-    run = StereoRun(name)
+    run = StereoRun(name, source)
     run.prepare_stereo_run()
     run.stereo_run(date_list, begin, end)
 
@@ -28,6 +29,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--name', default='test')
     parser.add_argument('-d', '--date_list', default=DEFAULT_DATE_LIST_FILE)
+    parser.add_argument('-s', '--source', default='mc-proton-180')
     parser.add_argument('--begin', default=STEPS.PREP_TRUMP_SIM)
     parser.add_argument('--end', default=None)
     args = parser.parse_args()
@@ -38,6 +40,7 @@ if __name__ == '__main__':
     run = make_stereo_happen(
         console_mirror=True,
         name=args.name,
+        source=args.source,
         date_list=args.date_list,
         begin=args.begin,
         end=args.end,

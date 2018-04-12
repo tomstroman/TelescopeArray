@@ -56,12 +56,13 @@ def find_or_create_specific_run(stereo_run):
     db = stereo_run.db
     params = stereo_run.params
 
-    run_name = params.name
     is_mc = params.is_mc
     if is_mc:
         sql = 'SELECT name, species FROM MCStereoRuns WHERE stereorun_path=\"{0}\"'.format(base_run)
+        run_name = '{}-{}'.format(params.name, params.dtime)
     else:
         sql = 'SELECT name FROM DataStereoRuns WHERE stereorun_path=\"{0}\"'.format(base_run)
+        run_name = params.name
     logging.debug('sql: %s', sql)
 
     matching_runs = db.retrieve(sql)
