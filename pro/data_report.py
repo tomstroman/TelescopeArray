@@ -20,6 +20,7 @@
 # the DST framework used by all the analysis code.
 
 import argparse
+import gzip
 import logging
 import os
 import re
@@ -40,6 +41,8 @@ site_to_site_id = {
 }
 
 YMDPS = re.compile('(\d{4})(\d{2})(\d{2})(\d{2})(\d)')
+EVENTS_READ = re.compile('(?<=Events read) *\d+')
+NOT_FOUND = re.compile('not found in attached DST file')
 TIMECORRS = {
     '0': '/tama_{4}/black-rock/{0}{1}{2}/y{0}m{1}d{2}p{3}_site{4}_timecorr.txt',
     '1': '/tama_{4}/long-ridge/{0}{1}{2}/y{0}m{1}d{2}p{3}_site{4}_timecorr.txt',
@@ -51,6 +54,10 @@ DSTS = {
 FDPEDS = {
     '0': '/scratch1/fdpedv/black-rock/{0}{1}{2}/y{0}m{1}d{2}p{3}.ped.dst.gz',
     '1': '/scratch1/fdpedv/long-ridge/{0}{1}{2}/y{0}m{1}d{2}p{3}.ped.dst.gz',
+}
+FDPLANES = {
+    '0': '/scratch/tstroman/mono/fdplane_cal1.4_joint_20141014/black-rock/{0}{1}{2}/y{0}m{1}d{2}p{3}.pln.err.gz',
+    '1': '/scratch/tstroman/mono/fdplane_cal1.4_joint_20141014/long-ridge/{0}{1}{2}/y{0}m{1}d{2}p{3}.pln.err.gz',
 }
 
 # status system: characterize progress of a given night or part numerically, with
@@ -224,9 +231,53 @@ def data_report(reset=False, console_mirror=False, check_wiki_log=False):
         logging.info('Found fdped for %s DST_EXISTS part(s); promoting status', len(fdped_found))
         db.update_rows('UPDATE PartStatus SET status={} WHERE part11=?'.format(part_statuses.FDPED_EXISTS), tuple(fdped_found))
 
-    sql = 'SELECT part11 FROM PartStatus WHERE status={}'.format(part_statuses.FDPED_EXISTS)
+    sql = 'SELECT s.part11, p.daqtrig FROM PartStatus AS s JOIN FDDB.Parts AS p ON s.part11=p.part11 WHERE s.status={} ORDER BY s.part11'.format(part_statuses.FDPED_EXISTS)
     fdped_parts = db.retrieve(sql)
     logging.info('Six-sigma parts in state FDPED_EXISTS: %s', len(fdped_parts))
+
+# search for complete calibration the easy way first:
+# FDPlane has been run, it has read all the triggers we expect from the log, and no calibration errors were found.
+    good_calib_via_fdplane = set()
+    bad_calib_via_fdplane = set()
+    for part11, daqtrig in fdped_parts:
+        stderr = _fdplane_stderr_file(part11)
+        if os.path.exists(stderr):
+            logging.info('Checking %s', stderr)
+            with gzip.open(stderr, 'r') as gzerr:
+                err = gzerr.read()
+            if NOT_FOUND.search(err):
+                bad_calib_via_fdplane.add((part11,))
+            else:
+                input = EVENTS_READ.findall(err)
+                events_read = sum([int(i) for i in input])
+                if events_read == daqtrig:
+                    good_calib_via_fdplane.add((part11,))
+                else:
+# now see if maybe we didn't get what the DAQ log said to expect, but nevertheless got everything we could
+                    timecorr = _timecorr_file(part11)
+                    with open(timecorr, 'r') as tc:
+                        ctdtrig = len(tc.readlines())
+                    if events_read == ctdtrig:
+                        good_calib_via_fdplane.add((part11,))
+                    elif err.count('gzclose') <= 1 and (
+                            len(input) == ctdtrig / 256 + 1 or
+                            (len(input) == 1 and events_read / 256 == ctdtrig / 256)
+                        ):
+                        logging.warn('adding despite mismatch: CTD %s, fdplane %s', ctdtrig, events_read)
+                        good_calib_via_fdplane.add((part11,))
+        else:
+            logging.info('Missing %s', stderr)
+    if good_calib_via_fdplane:
+        logging.info('Found fully processed FDPlane with no calibration missing for %s FDPED_EXISTS part(s); promoting status', len(good_calib_via_fdplane))
+        db.update_rows('UPDATE PartStatus SET status={} WHERE part11=?'.format(part_statuses.CALIBRATION_COMPLETE), tuple(good_calib_via_fdplane))
+    if bad_calib_via_fdplane:
+        logging.info('Found fully processed FDPlane with some calibration missing for %s FDPED_EXISTS part(s); updating status', len(bad_calib_via_fdplane))
+        db.update_rows('UPDATE PartStatus SET status={} WHERE part11=?'.format(part_statuses.CALIBRATION_INCOMPLETE), tuple(bad_calib_via_fdplane))
+
+
+    sql = 'SELECT part11 FROM PartStatus WHERE status={}'.format(part_statuses.CALIBRATION_COMPLETE)
+    calib_parts = db.retrieve(sql)
+    logging.info('Six-sigma parts in state CALIBRATION_COMPLETE: %s', len(calib_parts))
 
 
 def _timecorr_file(part11):
@@ -243,6 +294,11 @@ def _dst0_file(part11, ctd_prefix):
 def _fdped_part_file(part11):
     y, m, d, p, s = YMDPS.findall(str(part11))[0]
     return FDPEDS[s].format(y, m, d, p, s)
+
+
+def _fdplane_stderr_file(part11):
+    y, m, d, p, s = YMDPS.findall(str(part11))[0]
+    return FDPLANES[s].format(y, m, d, p, s)
 
 
 def extra_code(db):
