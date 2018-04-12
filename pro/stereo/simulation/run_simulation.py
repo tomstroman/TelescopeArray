@@ -61,7 +61,7 @@ def generate_mc2k12_mc(md_in, md_dir):
 def filter_md_output(dst):
     cmd = 'dstlist {}'.format(dst)
     output = sp.check_output(cmd, shell=True)
-    lines = output.split('\n')[1:]
+    lines = output.split('\n')[0:]
     events_with_hraw1 = []
     for i, line in enumerate(lines):
         if 'hraw1' in line:
