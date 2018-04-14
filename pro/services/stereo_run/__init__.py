@@ -22,7 +22,7 @@ DEFAULT_DATE_LIST_FILE = 'test-date-list.txt'
 DEFAULT_DATE_LIST_CONTENTS = '20080401\n'
 
 class StereoRun(object):
-    def __init__(self, name=None, source=None):
+    def __init__(self, name=None, model=None, source=None):
         logging.debug("setting up StereoRun")
 
         self._import_environment()
@@ -30,12 +30,12 @@ class StereoRun(object):
         self._prepare_database()
 
         if source == 'nature':
-            self.params = StereoRunParams(self, is_mc=False)
+            self.params = StereoRunParams(self, model=model, is_mc=False)
         else:
             try:
                 assert source.startswith('mc-') and source.count('-') == 2, 'Invalid source name'
                 _, species_name, dtime = source.split('-')
-                self.params = StereoRunParams(self, is_mc=True, species_name=species_name, dtime=dtime)
+                self.params = StereoRunParams(self, model=model, is_mc=True, species_name=species_name, dtime=dtime)
             except Exception as err:
                 logging.error('Error building StereoRunParams: %s', err)
                 raise Exception('Invalid source, must be "nature" or "mc-(species)-(dtime)"')
