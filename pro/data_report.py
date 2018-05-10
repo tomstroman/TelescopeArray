@@ -440,6 +440,17 @@ def get_wiki_log_content(log_file):
         return '(could not parse {}'.format(log_file)
 
 
+def query_part(part):
+    assert 20000000000 < int(part) < 30000000000, 'Part must be 11-digit YYYYMMDDPPS'
+    db = DatabaseWrapper(db_wiki)
+    sql = 'SELECT status FROM PartStatus WHERE part11={}'.format(part)
+    results = db.retrieve(sql)
+    if not results:
+        return None
+
+    return results[0][0]
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-r', '--reset', action='store_true')
