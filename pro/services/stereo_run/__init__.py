@@ -126,11 +126,12 @@ class StereoRun(object):
         directory.build_tree(self, path)
 
     def _compile_executables(self):
-        for prog, filename in executables.get_base_reqs(self):
-            exe = os.path.join(self.bin_path, filename)
-            if not os.path.exists(exe):
-                logging.debug('did not find %s', exe)
-                executables.prepare_executable(self, prog, exe, src_dir=self.src_path)
+        with executables.override_params(stereo_run=self) as exe_service:
+            for prog, filename in exe_service.get_base_reqs():
+                exe = os.path.join(self.bin_path, filename)
+                if not os.path.exists(exe):
+                    logging.debug('did not find %s', exe)
+                    executables.prepare_executable(self, prog, exe, src_dir=self.src_path)
 
     def _build_templates(self):
         logging.info('creating templates')

@@ -58,16 +58,39 @@ compiler_map = {
     'trump': (save_files['trump']['base'], compile_trump),
 }
 
+class override_params(object):
+    def __init__(self, stereo_run):
+        self.model = stereo_run.params.model
+        self.recon = stereo_run.recon
+        self.mdrecon = stereo_run.mdrecon
 
-def get_base_reqs(stereo_run):
-    items = []
-    for name, filename in base_reqs.items():
-        if name in use_recon:
-            filename = stereo_run.recon + '-' + filename
-        elif name in use_mdrecon:
-            filename = stereo_run.mdrecon + '-' + filename
-        items.append((name, filename))
-    return items
+    def __enter__(self):
+        logging.info('Entering override_model context for model %s', self.model)
+        self.changes = self._modify_sources()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        logging.info('Exiting override_model')
+        for updated, original in self.changes.items():
+            logging.info('Pretending to mv %s to %s', original, updated)
+
+
+    def get_base_reqs(self):
+        items = []
+        for name, filename in base_reqs.items():
+            if name in use_recon:
+                filename = self.recon + '-' + filename
+            elif name in use_mdrecon:
+                filename = self.mdrecon + '-' + filename
+            items.append((name, filename))
+        return items
+
+    def _modify_sources(self):
+        changes = OrderedDict()
+        logging.info('Pretending to update constants.h')
+        changes.update({'trump/inc/constants.h': 'trump/inc/constants.h.original'})
+        return changes
+
 
 def prepare_executable(stereo_run, name, destination, src_dir=None):
     assert name in base_reqs.keys()
