@@ -5,7 +5,7 @@ import subprocess as sp
 from collections import OrderedDict
 
 from compile_dump import compile_dump_tuples, compile_dump_profs
-from compile_trump import compile_trump
+from compile_trump import compile_trump, modify_trump
 from compile_fdtp import compile_fdtp
 from compile_mc2k12 import compile_mc2k12
 from compile_stpfl import compile_stpfl
@@ -60,6 +60,7 @@ compiler_map = {
 
 class override_params(object):
     def __init__(self, stereo_run):
+        self.stereo_run = stereo_run
         self.model = stereo_run.params.model
         self.recon = stereo_run.recon
         self.mdrecon = stereo_run.mdrecon
@@ -72,7 +73,9 @@ class override_params(object):
     def __exit__(self, exc_type, exc_value, traceback):
         logging.info('Exiting override_model')
         for updated, original in self.changes.items():
-            logging.info('Pretending to mv %s to %s', original, updated)
+            logging.info('Moving %s to %s', original, updated)
+            cmd = 'mv {} {}'.format(original, updated)
+            sp.check_output(cmd.split(), stderr=sp.STDOUT)
 
 
     def get_base_reqs(self):
@@ -87,8 +90,7 @@ class override_params(object):
 
     def _modify_sources(self):
         changes = OrderedDict()
-        logging.info('Pretending to update constants.h')
-        changes.update({'trump/inc/constants.h': 'trump/inc/constants.h.original'})
+        changes.update(modify_trump(save_files['trump']['base'], self.stereo_run))
         return changes
 
 

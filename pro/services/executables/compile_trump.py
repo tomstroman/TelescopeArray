@@ -3,7 +3,7 @@ import os
 import subprocess as sp
 
 
-def compile_trump(stereo_run, cwd, destination):
+def modify_trump(cwd, stereo_run):
     dedx_model = stereo_run.params.dedx_model
     change = os.path.join(cwd, 'inc', 'constants.h')
     original = change + '.original'
@@ -17,12 +17,18 @@ def compile_trump(stereo_run, cwd, destination):
         buf = ''
         for line in orig_lines:
             if line.startswith('#define DEDX_MODEL'):
-                buf += '#define DEDX_MODEL {} // set by script'.format(dedx_model)
+                buf += '#define DEDX_MODEL {} // set by script\n'.format(dedx_model)
             else:
                 buf += line
 
     with open(change, 'w') as newfile:
         newfile.write(buf)
+
+    return {change: original}
+
+
+def compile_trump(stereo_run, cwd, destination):
+    dedx_model = stereo_run.params.dedx_model
 
     cmd_shell = ['make realclean']
     sp.check_output(cmd_shell, shell=True, stderr=sp.STDOUT, cwd=cwd)
@@ -36,8 +42,3 @@ def compile_trump(stereo_run, cwd, destination):
 # run newly compiled TRUMP, check for correct DEDX_MODEL
     exe_out = sp.Popen([destination], stdout=sp.PIPE)
     assert 'This version built using DEDX_MODEL {}\n'.format(dedx_model) in exe_out.stdout.read()
-
-# cleanup -- TODO: add this to a list for cleanup AFTER source-code copying
-    cmd = 'mv {} {}'.format(original, change)
-    sp.check_output(cmd.split(), stderr=sp.STDOUT)
-
