@@ -22,7 +22,7 @@ fadc_process_tables = [
 stereo_run_tables = [
     ('Sites', 'id INTEGER PRIMARY KEY, shortname TEXT, name TEXT, longname TEXT'),
 
-    ('Models', 'name TEXT PRIMARY KEY, propername TEXT, dedx_model INTEGER'),
+    ('Models', 'name TEXT PRIMARY KEY, propername TEXT, dedx_model INTEGER, c1 REAL, c2 REAL, c3 REAL, c4 REAL, c5 REAL, p_mec_a0 REAL, p_mec_a1 REAL, p_mec_a2 REAL'),
 
     ('Species', 'corsika_id INTEGER PRIMARY KEY, name TEXT'),
 
