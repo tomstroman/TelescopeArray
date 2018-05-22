@@ -3,6 +3,51 @@ import os
 import re
 import subprocess as sp
 
+NERLING_COEFF = re.compile('(?:^ +const real_t )(c\d)(?= =)')
+def modify_utafd(cwd, stereo_run):
+    dedx_model = stereo_run.params.dedx_model
+    db_coeffs = stereo_run.db.retrieve('SELECT c1, c2, c3, c4, c5, name FROM Models WHERE dedx_model={}'.format(dedx_model))[0]
+    coeffs = {
+        'c1': db_coeffs[0],
+        'c2': db_coeffs[1],
+        'c3': db_coeffs[2],
+        'c4': db_coeffs[3],
+        'c5': db_coeffs[4],
+    }
+    model_name = db_coeffs[5]
+
+    change = os.path.join(cwd, 'src', 'physics', 'inc', 'Nerling.cuh')
+    original = change + '.original'
+
+    cmd = 'cp {} {}'.format(change, original)
+    sp.check_output(cmd.split(), stderr=sp.STDOUT)
+    with open(change, 'r') as origfile:
+        orig_lines = origfile.readlines()
+
+        buf = ''
+        for line in orig_lines:
+            coeff_assignment = NERLING_COEFF.findall(line)
+            if coeff_assignment:
+                c = coeff_assignment[0]
+                buf += '    const real_t {} = {}; // set by script for model {} ({})\n'.format(
+                    c,
+                    coeffs[c],
+                    dedx_model,
+                    model_name,
+                )
+            else:
+                buf += line
+
+    with open(change, 'w') as newfile:
+        newfile.write(buf)
+
+    return {change: original}
+
+# other possible files to modify:
+# src/mc2k10/src/ghform.f
+# src/stpfl12/src/stpfl_fit_mod_plane.cxx
+# src/physics/inc/PhysicsService.cuh
+
 
 def compile_mc2k12(stereo_run, cwd, destination):
     utafd = os.getenv('UTAFD_ROOT_DIR')

@@ -7,7 +7,7 @@ from collections import OrderedDict
 from compile_dump import compile_dump_tuples, compile_dump_profs
 from compile_trump import compile_trump, modify_trump
 from compile_fdtp import compile_fdtp
-from compile_mc2k12 import compile_mc2k12
+from compile_mc2k12 import compile_mc2k12, modify_utafd
 from compile_stpfl import compile_stpfl
 
 
@@ -27,6 +27,7 @@ use_recon = ['fdtp']
 use_mdrecon = ['stpfl']
 
 TAHOME = os.getenv('TAHOME')
+UTAFD = os.getenv('UTAFD_ROOT_DIR')
 save_files = {
     'dump_profs': {
         'base' : None,
@@ -47,13 +48,19 @@ save_files = {
         'base'  : os.path.join(TAHOME, 'fdtubeprofile'),
         'files' : [],
     },
+    'mc2k12': {
+        'base'  : UTAFD,
+        'files' : [
+            'src/physics/inc/Nerling.cuh',
+        ],
+    },
 }
 
 compiler_map = {
     'dump_profs' : (None, compile_dump_profs),
     'dump_tuples': (None, compile_dump_tuples),
     'fdtp': (save_files['fdtp']['base'], compile_fdtp),
-    'mc2k12': (None, compile_mc2k12),
+    'mc2k12': (save_files['mc2k12']['base'], compile_mc2k12),
     'stpfl': (None, compile_stpfl),
     'trump': (save_files['trump']['base'], compile_trump),
 }
@@ -91,6 +98,7 @@ class override_params(object):
     def _modify_sources(self):
         changes = OrderedDict()
         changes.update(modify_trump(save_files['trump']['base'], self.stereo_run))
+        changes.update(modify_utafd(save_files['mc2k12']['base'], self.stereo_run))
         return changes
 
 
