@@ -38,13 +38,13 @@ fdplane_configs = (
 )
 table_data['FDPlaneConfigs'] = fdplane_configs
 
-# ('Models', 'name TEXT PRIMARY KEY, propername TEXT, dedx_model INTEGER, c1 REAL, c2 REAL, c3 REAL, c4 REAL, c5 REAL, p_mec_a0 REAL, p_mec_a1 REAL, p_mec_a2 REAL'),
+# ('Models', 'name TEXT PRIMARY KEY, propername TEXT, dedx_model INTEGER, c1 REAL, c2 REAL, c3 REAL, c4 REAL, c5 REAL, p_mec_a0 REAL, p_mec_a1 REAL, p_mec_a2 REAL, alpha_avg REAL'),
 models = (
-    ('qgsjet01c', 'QGSJET-01c', 14, 159.899, 1.63203, 9.99531, 2.36229, 0.193587, None, None, None),
-    ('qgsjetii-03', 'QGSJET-II-03', 13, 337.164, 1.66721, 10.9392, 2.36865, 0.189572, -0.66185, 0.152506, -0.00361461),
-    ('qgsjetii-04', 'QGSJET-II-04', 15, 390.457, 1.69574, 10.8641, 2.36977, 0.188803, None, None, None),
-    ('sibyll', 'SIBYLL 2.1', 16, 0.525561, 0.865884, 6.07073, 2.35392, 0.19902, None, None, None),
-    ('epos-lhc', 'EPOS LHC', 12, 129.249, 1.60964, 9.79053, 2.35824, 0.199557, None, None, None),
+    ('qgsjet01c', 'QGSJET-01c', 14, 159.899, 1.63203, 9.99531, 2.36229, 0.193587, None, None, None, 2.45992),
+    ('qgsjetii-03', 'QGSJET-II-03', 13, 337.164, 1.66721, 10.9392, 2.36865, 0.189572, -0.66185, 0.152506, -0.00361461, 2.45909),
+    ('qgsjetii-04', 'QGSJET-II-04', 15, 390.457, 1.69574, 10.8641, 2.36977, 0.188803, None, None, None, 2.46042),
+    ('sibyll', 'SIBYLL 2.1', 16, 0.525561, 0.865884, 6.07073, 2.35392, 0.19902, None, None, None, 2.45853),
+    ('epos-lhc', 'EPOS LHC', 12, 129.249, 1.60964, 9.79053, 2.35824, 0.199557, None, None, None, 2.46262),
 )
 table_data['Models'] = models
 
