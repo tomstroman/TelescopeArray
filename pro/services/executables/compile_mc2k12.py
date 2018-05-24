@@ -3,18 +3,19 @@ import os
 import re
 import subprocess as sp
 
-NERLING_COEFF = re.compile('(?:^ +const real_t )(c\d)(?= =)')
+DEDX_VARS = re.compile('(?:^ +const real_t )(c\d|shower_average)(?= =)')
 def modify_utafd(cwd, stereo_run):
     dedx_model = stereo_run.params.dedx_model
-    db_coeffs = stereo_run.db.retrieve('SELECT c1, c2, c3, c4, c5, name FROM Models WHERE dedx_model={}'.format(dedx_model))[0]
-    coeffs = {
-        'c1': db_coeffs[0],
-        'c2': db_coeffs[1],
-        'c3': db_coeffs[2],
-        'c4': db_coeffs[3],
-        'c5': db_coeffs[4],
+    db_vars = stereo_run.db.retrieve('SELECT c1, c2, c3, c4, c5, alpha_avg, name FROM Models WHERE dedx_model={}'.format(dedx_model))[0]
+    replacements = {
+        'c1': db_vars[0],
+        'c2': db_vars[1],
+        'c3': db_vars[2],
+        'c4': db_vars[3],
+        'c5': db_vars[4],
+        'shower_average': db_vars[5],
     }
-    model_name = db_coeffs[5]
+    model_name = db_vars[6]
 
     change = os.path.join(cwd, 'src', 'physics', 'inc', 'Nerling.cuh')
     original = change + '.original'
@@ -26,12 +27,12 @@ def modify_utafd(cwd, stereo_run):
 
         buf = ''
         for line in orig_lines:
-            coeff_assignment = NERLING_COEFF.findall(line)
-            if coeff_assignment:
-                c = coeff_assignment[0]
+            var_assignment = DEDX_VARS.findall(line)
+            if var_assignment:
+                var = var_assignment[0]
                 buf += '    const real_t {} = {}; // set by script for model {} ({})\n'.format(
-                    c,
-                    coeffs[c],
+                    var,
+                    replacements[var],
                     dedx_model,
                     model_name,
                 )
