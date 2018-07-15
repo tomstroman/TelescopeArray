@@ -44,10 +44,9 @@ grep BRANCH dumpst.c | gawk 'NR > 3 {print NR-3,$NF}' > dumpst-columns.txt
 #define IN_UNIT 1
 #define MAXNBANK 200
 
-// 2015-05-14: now based on QGSJET-II-03 protons
-#  define MEC_A0 -0.666185
-#  define MEC_A1  0.152506
-#  define MEC_A2 -0.00361461
+#  define MEC_A0 _META_REPLACE_MEC_A0_
+#  define MEC_A1 _META_REPLACE_MEC_A1_
+#  define MEC_A2 _META_REPLACE_MEC_A2_
 
 #define getMissingEnergyCorrection(LE) ((MEC_A0)+(MEC_A1)*(LE)+(MEC_A2)*(LE)*(LE))
 // (1 - 0.045)/(1 - 0.05*0.045)
