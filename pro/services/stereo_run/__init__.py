@@ -39,6 +39,8 @@ class StereoRun(object):
             except Exception as err:
                 logging.error('Error building StereoRunParams: %s', err)
                 raise Exception('Invalid source, must be "nature" or "mc-(species)-(dtime)"')
+        self.params.skip_md = 'no-middle-drum' in name
+
         logging.info("Parameters object: %s", self.params)
 
 # TODO: replace this function with runtime arguments

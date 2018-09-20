@@ -72,6 +72,8 @@ def render_template(stereo_run):
         replacements = standard_replacements
         if stereo_run.name == 'test':
             replacements['_META_REPLACE_ENERGY_'] = '19.0 19.8'
+        elif stereo_run.name.startswith('plastic'):
+            replacements['_META_REPLACE_ENERGY_'] = '18.7 21.5'
 
         replacements.update({
             '_META_REPLACE_GEOCAL_'  : stereo_run.name,

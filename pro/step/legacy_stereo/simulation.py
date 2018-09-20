@@ -61,8 +61,13 @@ def run_trump_sim(night, params):
         else:
             os.remove(moslog)
 
-    cmd = 'mosenv -q -J{} -b -l -m320 -e python $TSTA/pro/stereo/simulation/run_simulation.py {} -geobr {} -geolr {} &> {}'.format(
-        night, trump_path, geometry_dsts['br'], geometry_dsts['lr'], moslog
+    cmd = 'mosenv -q -J{night} -b -l -m320 -e python $TSTA/pro/stereo/simulation/run_simulation.py {trump_path} -geobr {geobr} -geolr {geolr} {no_md} &> {moslog}'.format(
+        night=night,
+        trump_path=trump_path,
+        geobr=geometry_dsts['br'],
+        geolr=geometry_dsts['lr'],
+        no_md='--no_md' if params['stereo_run'].params.skip_md else '',
+        moslog=moslog,
     )
 
     params['mosq'][night] = ('new', None)
@@ -99,7 +104,7 @@ def verify_sim(night, params):
     if not moslog:
         return 'Mosix output empty'
 
-    skip_md = 'Simulation event count: 0' in moslog or 'found 0 part(s)' in moslog
+    skip_md = 'Simulation event count: 0' in moslog or 'found 0 part(s)' in moslog or params['stereo_run'].params.skip_md
 
     with open(trump_log, 'r') as outf:
         try:

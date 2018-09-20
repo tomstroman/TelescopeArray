@@ -27,6 +27,10 @@ def simulate_night(trump_path, geo_files):
 
     rts = run_trump(trump_path, is_mono, geo_files)
 
+    # skip the MD simulation if --no_md was specified
+    if not geo_files['md']:
+        return
+
     md_in, md_dir = prep_md_sim(rts)
 
     if md_in is not None:
@@ -103,9 +107,11 @@ if __name__ == '__main__':
     parser.add_argument('trump_path')
     parser.add_argument('-geobr', default=os.path.join(rtdata, 'fdgeom', 'geobr_joint.dst.gz'))
     parser.add_argument('-geolr', default=os.path.join(rtdata, 'fdgeom', 'geolr_joint.dst.gz'))
+    parser.add_argument('--no_md', action="store_true")
     args = parser.parse_args()
     geo_files = {
         'br': args.geobr,
         'lr': args.geolr,
+        'md': not args.no_md,
     }
     simulate_night(args.trump_path, geo_files)
