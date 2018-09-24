@@ -57,7 +57,7 @@ def rts_to_ROOT(rts):
     with open(temp_file, 'w') as rts_txt:
         rts_txt.write(buf)
 
-    cmd = 'root -l -q "{0}(\\"{1}\\")"'.format(rts_to_root_exe, temp_file)
+    cmd = 'root -l -b -q "{0}(\\"{1}\\")"'.format(rts_to_root_exe, temp_file)
     sp.check_output(cmd, shell=True)
     os.remove(temp_file)
 
