@@ -1,6 +1,16 @@
 *.pyc
 *.x3d
 *.swp
-*~
+*.o
+*.run
+*.so
+*.d
+*.aux
+*.dvi
+*.tex
 *.log
+*.out
+*.pdf
+*.txt
+*~
 
