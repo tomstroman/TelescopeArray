@@ -3,6 +3,8 @@ import sys
 import os
 import time
 import re
+import subprocess as sp
+from collections import defaultdict
 
 narg = len(sys.argv)
 
@@ -63,11 +65,12 @@ for path in sys.argv[1:]:
         #print(foutP)
         nnights = 0
         nfiles = 0
+
+        thrown = defaultdict(int)
         for night in sorted(os.listdir(abspath)):
             if night[0] != "2":
                 continue
             apath = abspath + "/" + night + "/ascii2d/" + recon
-            
             if not os.path.exists(apath):
                 print "{0} doesn't exist".format(apath)
                 continue
@@ -90,8 +93,25 @@ for path in sys.argv[1:]:
                         foutP.write(re.sub("(inf|nan)", "0", line))
                     fdump.close()
                     #nfiles+=1
+            # look for ROOT files for thrown counts
+            y, m, d = night[0:4], night[4:6], night[6:8]
+            rpath = os.path.join(abspath, night, "trump", "y{}m{}d{}.rts.root".format(y, m, d))
+            if os.path.exists(rpath):
+                cmd = 'root -l -b -q "{}(\\"{}\\")"'.format(hist_dump, rpath)
+                root_exe = sp.Popen(cmd, shell=True, stdout=sp.PIPE)
+                for line in root_exe.stdout.readlines():
+                    if not line.startswith('BIN'):
+                        continue
+                    _, bin_center, num_thrown = line.split()
+                    thrown[bin_center] += int(num_thrown)
+
         foutT.close()
         foutP.close()
-    except:
+
+        if thrown:
+            with open(outHist, "w") as out_hist:
+                for bin, count in sorted(thrown.items(), key=lambda x: x[0]):
+                    out_hist.write("{} {}\n".format(bin, count))
+    except Exception as err:
         print("\nError creating {0}".format(outTuple))  
     print("\nRead {0} files from {1} nights.".format(nfiles, nnights))
