@@ -13,6 +13,7 @@ def make_stereo_happen(
         source=None,
         begin=None,
         end=None,
+        geo=None
     ):
     log_name = log.set_up_log(console_mirror=console_mirror)
     if not console_mirror:
@@ -20,7 +21,7 @@ def make_stereo_happen(
 
     logging.info("stereo happening now")
 
-    run = StereoRun(name, model, source)
+    run = StereoRun(name, model, source, geo)
     run.prepare_stereo_run()
     run.stereo_run(date_list, begin, end)
 
@@ -32,6 +33,9 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--date_list', default=DEFAULT_DATE_LIST_FILE)
     parser.add_argument('-m', '--model', default='qgsjetii-03')
     parser.add_argument('-s', '--source', default='mc-proton-180')
+    parser.add_argument('--geobr', default='geobr_joint.dst.gz')
+    parser.add_argument('--geolr', default='geolr_joint.dst.gz')
+    parser.add_argument('--geomd', default='geomd_20131002.dst.gz')
     parser.add_argument('--begin', default=STEPS.PREP_TRUMP_SIM)
     parser.add_argument('--end', default=None)
     args = parser.parse_args()
@@ -39,6 +43,11 @@ if __name__ == '__main__':
         if step is not None:
             assert step in Step.names.keys()
 
+    geo = {
+        'br': args.geobr,
+        'lr': args.geolr,
+        'md': args.geomd,
+    }
     run = make_stereo_happen(
         console_mirror=True,
         name=args.name,
@@ -47,4 +56,5 @@ if __name__ == '__main__':
         model=args.model,
         begin=args.begin,
         end=args.end,
+        geo=geo,
     )

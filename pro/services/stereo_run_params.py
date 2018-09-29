@@ -79,11 +79,14 @@ class StereoRunParams(object):
         return 'mc-{0}'.format(species)
 
     def _find_geometry_dsts(self):
-        dsts_by_site = self.db.retrieve(
-            'SELECT S.shortname, G.dstfile FROM SiteGeometry G JOIN Sites S ON G.site=S.ID WHERE G.geometryset="{0}"'.format(
-                self.geometry
+        if isinstance(self.geometry, dict):
+            dsts_by_site = self.geometry.items()
+        else:
+            dsts_by_site = self.db.retrieve(
+                'SELECT S.shortname, G.dstfile FROM SiteGeometry G JOIN Sites S ON G.site=S.ID WHERE G.geometryset="{0}"'.format(
+                    self.geometry
+                )
             )
-        )
         dsts = {
             site: os.path.join(
                 self.stereo_run.rtdata,
