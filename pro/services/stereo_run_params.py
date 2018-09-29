@@ -91,6 +91,6 @@ class StereoRunParams(object):
                 dst,
             ) for site, dst in dsts_by_site
         }
-        assert len(dsts) == 3
-        assert all(os.path.exists(dst) for dst in dsts.values())
+        assert len(dsts) == 3, 'Invalid number of geometry DSTs found'
+        assert all(os.path.exists(dst) for dst in dsts.values()), 'Missing geometry DSTs'
         return dsts
