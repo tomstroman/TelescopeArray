@@ -51,12 +51,15 @@ for path in sys.argv[1:]:
   
     outTuple = out+"/dumpst2.{0}.{1}.{2}.{3}.tuple.txt".format(cal, model, dstsrc, recon)
     outProf = re.sub("tuple", "prof", outTuple)
+    outHist = re.sub("tuple", "hist", outTuple)
+    hist_dump = os.path.join(os.path.abspath(os.path.curdir), 'dump_thrown.C')
     print(outTuple)
     print(outProf)
     
     try:
         foutT = open(outTuple, "w")
         foutP = open(outProf, "w")
+
         fin = open(dumpst, "r")
         for line in fin.readlines():
             foutT.write(line)
