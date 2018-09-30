@@ -25,10 +25,20 @@ def _compile_template(template_name, stereo_run, destination, replacements=None)
     with open(source_template, 'r') as c_source_file:
         source = c_source_file.read()
 
+    geo = stereo_run.params.geometry_dsts
+    geo_replacements = {
+        '_META_REPLACE_BRGEO_': geo['br'],
+        '_META_REPLACE_LRGEO_': geo['lr'],
+        '_META_REPLACE_MDGEO_': geo['md'],
+    }
     if replacements is not None:
-        print 'Replacements:', replacements
-        for placeholder, value in replacements.items():
-            source = source.replace(placeholder, value)
+        replacements.update(geo_replacements)
+    else:
+        replacements = geo_replacements
+
+    print 'Replacements:', replacements
+    for placeholder, value in replacements.items():
+        source = source.replace(placeholder, value)
 
     cmds = []
     is_command = False

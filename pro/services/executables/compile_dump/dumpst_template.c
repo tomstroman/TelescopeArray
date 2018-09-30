@@ -122,9 +122,12 @@ int main(int argc, char *argv[]) {
 //   sprintf(lrgeo,"%s/fdgeom/geolr_ssp20131002cen.dst.gz",RTDATA);
 //   sprintf(brgeo,"%s/fdgeom/geobr_tokuno20131111cen.dst.gz",RTDATA);
 //   sprintf(lrgeo,"%s/fdgeom/geolr_tokuno20131111cen.dst.gz",RTDATA);  
-  sprintf(brgeo,"%s/fdgeom/geobr_joint.dst.gz",RTDATA);
-  sprintf(lrgeo,"%s/fdgeom/geolr_joint.dst.gz",RTDATA);
-  sprintf(mdgeo,"%s/fdgeom/geomd_20131002.dst.gz",RTDATA);
+//  sprintf(brgeo,"%s/fdgeom/geobr_joint.dst.gz",RTDATA);
+//  sprintf(lrgeo,"%s/fdgeom/geolr_joint.dst.gz",RTDATA);
+//  sprintf(mdgeo,"%s/fdgeom/geomd_20131002.dst.gz",RTDATA);
+  sprintf(brgeo, "_META_REPLACE_BRGEO_");
+  sprintf(lrgeo, "_META_REPLACE_LRGEO_");
+  sprintf(mdgeo, "_META_REPLACE_MDGEO_");
   dstOpenUnit(IN_UNIT, brgeo, MODE_READ_DST);
 //   while (
   eventRead(IN_UNIT, wantBanks, hasBanks, &event);// >= 0)
