@@ -22,7 +22,7 @@ DEFAULT_DATE_LIST_FILE = 'test-date-list.txt'
 DEFAULT_DATE_LIST_CONTENTS = '20080401\n'
 
 class StereoRun(object):
-    def __init__(self, name=None, model=None, source=None, geo=None):
+    def __init__(self, name=None, model=None, source=None, geo=None, salt_overrides=None):
         logging.debug("setting up StereoRun")
 
         self._import_environment()
@@ -40,6 +40,7 @@ class StereoRun(object):
                 logging.error('Error (%s) building StereoRunParams: %s', type(err), err)
                 raise
         self.params.skip_md = 'no-middle-drum' in name
+        self.params.salt_overrides = salt_overrides
 
         logging.info("Parameters object: %s", self.params)
 

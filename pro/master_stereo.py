@@ -13,7 +13,8 @@ def make_stereo_happen(
         source=None,
         begin=None,
         end=None,
-        geo=None
+        geo=None,
+        salt_overrides=None,
     ):
     log_name = log.set_up_log(console_mirror=console_mirror)
     if not console_mirror:
@@ -21,7 +22,7 @@ def make_stereo_happen(
 
     logging.info("stereo happening now")
 
-    run = StereoRun(name, model, source, geo)
+    run = StereoRun(name, model, source, geo, salt_overrides)
     run.prepare_stereo_run()
     run.stereo_run(date_list, begin, end)
 
@@ -38,6 +39,9 @@ if __name__ == '__main__':
     parser.add_argument('--geomd', default='geomd_20131002.dst.gz')
     parser.add_argument('--begin', default=STEPS.PREP_TRUMP_SIM)
     parser.add_argument('--end', default=None)
+    parser.add_argument('--override_salt_geocal', default=None)
+    parser.add_argument('--override_salt_model', default=None)
+    parser.add_argument('--override_salt_source', default=None)
     args = parser.parse_args()
     for step in [args.begin, args.end]:
         if step is not None:
@@ -48,6 +52,11 @@ if __name__ == '__main__':
         'lr': args.geolr,
         'md': args.geomd,
     }
+    salt_overrides = {
+        'geocal': args.override_salt_geocal,
+        'model': args.override_salt_model,
+        'source': args.override_salt_source,
+    }
     run = make_stereo_happen(
         console_mirror=True,
         name=args.name,
@@ -57,4 +66,5 @@ if __name__ == '__main__':
         begin=args.begin,
         end=args.end,
         geo=geo,
+        salt_overrides=salt_overrides,
     )

@@ -76,9 +76,9 @@ def render_template(stereo_run):
             replacements['_META_REPLACE_ENERGY_'] = '18.7 21.5'
 
         replacements.update({
-            '_META_REPLACE_GEOCAL_'  : stereo_run.name,
-            '_META_REPLACE_MODEL_'   : stereo_run.params.model,
-            '_META_REPLACE_SOURCE_'  : stereo_run.specific_run,
+            '_META_REPLACE_GEOCAL_'  : stereo_run.params.salt_overrides.get('geocal') or stereo_run.name,
+            '_META_REPLACE_MODEL_'   : stereo_run.params.salt_overrides.get('model') or stereo_run.params.model,
+            '_META_REPLACE_SOURCE_'  : stereo_run.params.salt_overrides.get('source') or stereo_run.specific_run,
             '_META_REPLACE_GEOFILE_' : stereo_run.params.geometry_dsts.get('br').replace('geobr', 'geoREPLACE_GEO'), # kludge!
             '_META_REPLACE_SPECIES_' : str(stereo_run.params.species),
             '_META_REPLACE_SHOWLIB_' : os.path.join(stereo_run.rtdata, 'showlib', showlib),
