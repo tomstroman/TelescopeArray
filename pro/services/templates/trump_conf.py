@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 
 standard_template_name = 'yYYYYmMMdDD.fd.conf'
 
@@ -70,7 +71,13 @@ def render_template(stereo_run):
         ))[0][0]
 
         replacements = standard_replacements
-        if stereo_run.name == 'test':
+        flat_limits = re.match('flat_([0-9\.]+)_([0-9\.]+)', stereo_run.name)
+        if flat_limits:
+            replacements['_META_REPLACE_ENERGY_'] = ' '.join(flat_limits.groups())
+            replacements['_META_REPLACE_NBREAK_'] = '0'
+            replacements['_META_REPLACE_EBREAK_'] = ''
+            replacements['_META_REPLACE_ESLOPE_'] = '1.0'
+        elif stereo_run.name == 'test':
             replacements['_META_REPLACE_ENERGY_'] = '19.0 19.8'
         elif stereo_run.name.startswith('plastic'):
             replacements['_META_REPLACE_ENERGY_'] = '18.7 21.5'
