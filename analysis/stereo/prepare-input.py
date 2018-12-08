@@ -319,15 +319,24 @@ for tag in root_batches:
             for sp in ordered_species:
                 if sp in rb:
                     outf.write('  TTree *{0} = new TTree();\n'.format(sp))
-                    outf.write('  {0}->ReadFile("{1}", "e/D:n");\n'.format(sp, rb[sp]))
+                    outf.write('  {0}->ReadFile("{1}", "bin/D:n");\n'.format(sp, rb[sp]))
                     outf.write('  TH1F *{0}Thrown = new TH1F("{0}Thrown", "Thrown", 50, 16.5, 21.5);\n'.format(sp))
+                    outf.write('  TH1F *{0}ThrownX = new TH1F("{0}ThrownX", "ThrownX", 60, 400, 1600);\n'.format(sp))
                     outf.write('  TH1F *{0}temp = {0}Thrown->Clone("temp");\n'.format(sp))
-                    outf.write('  {0}->Project("temp", "e", "n");\n'.format(sp))
+                    outf.write('  {0}->Project("temp", "bin", "n * (bin < 100.0)");\n'.format(sp))
                     outf.write('  for (int i=1; i<=50; i++) {\n')
                     outf.write('    {0}Thrown->SetBinContent(i, temp->GetBinContent(i));\n'.format(sp))
                     outf.write('  }\n')
                     outf.write('  {0}Thrown->SetEntries(temp->GetSumOfWeights());\n'.format(sp))
                     outf.write('  {0}Thrown->Write("{0}Thrown");\n'.format(sp))
+
+                    outf.write('  TH1F *{0}tempX = {0}ThrownX->Clone("tempX");\n'.format(sp))
+                    outf.write('  {0}->Project("tempX", "bin", "n * (bin > 100.0)");\n'.format(sp))
+                    outf.write('  for (int i=1; i<=60; i++) {\n')
+                    outf.write('    {0}ThrownX->SetBinContent(i, tempX->GetBinContent(i));\n'.format(sp))
+                    outf.write('  }\n')
+                    outf.write('  {0}ThrownX->SetEntries(tempX->GetSumOfWeights());\n'.format(sp))
+                    outf.write('  {0}ThrownX->Write("{0}ThrownX");\n'.format(sp))
             outf.write('  e.Close();\n}\n')
         histfile = '{0}.{1}.{2}.Hist.{3}.root'.format(
             calib, model, recon, '_'.join(insert_species)
